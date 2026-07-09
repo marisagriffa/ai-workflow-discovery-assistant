@@ -206,6 +206,15 @@ This repository is prepared for public GitHub publication:
 - `node_modules/`, production builds, logs, environment files, and test artifacts are ignored.
 - The project can be installed, run, and built with standard npm commands.
 
-## Portfolio Positioning
+## AI Operator Approach
 
-This project demonstrates practical AI Operator skills: process discovery, workflow analysis, human-in-the-loop design, automation opportunity mapping, adoption planning, and clear stakeholder-facing documentation.
+This project applies AI Operator principles to transform unstructured business information into actionable workflow improvements.
+
+It focuses on:
+
+- Process discovery and analysis
+- Bottleneck detection
+- Automation opportunity mapping
+- Human-in-the-loop decision design
+- Adoption planning
+- Clear documentation for stakeholders
