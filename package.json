@@ -1,0 +1,26 @@
+{
+  "name": "ai-workflow-discovery-assistant",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A React + Vite portfolio app that turns messy business process notes into AI workflow discovery and adoption briefs.",
+  "type": "module",
+  "keywords": [
+    "ai-operator",
+    "workflow-automation",
+    "process-discovery",
+    "react",
+    "vite"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {}
+}
