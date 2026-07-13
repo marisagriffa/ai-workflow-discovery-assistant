@@ -31,3 +31,19 @@ Create an AI Workflow Discovery Assistant as a practical AI Operator portfolio p
 
 ### Next step
 Create and publish the `dev` branch.
+
+## 2026-07-10 - Persistent saved analyses
+
+### Goal
+Make saved analyses durable and usable after a browser refresh.
+
+### Work completed
+- Added browser local storage persistence for saved analyses.
+- Prevented duplicate saves for the same notes and analysis.
+- Added a compact saved analyses list with restore and delete actions.
+- Kept the saved analyses limit at 8.
+- Updated PROJECT_REQUIREMENTS.md to reflect the implemented behavior.
+
+### Validation
+- `npm run build` passed.
+- Browser validation confirmed save, reload persistence, restore, delete, and 8-analysis cap behavior.

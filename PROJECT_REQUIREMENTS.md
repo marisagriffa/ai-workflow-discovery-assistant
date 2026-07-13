@@ -54,7 +54,8 @@ It must never describe planned or mocked behavior as fully implemented.
   - Human review points
   - Test scenarios
   - Implementation Impact
-- Top navigation actions: History, Saved analyses, New analysis.
+- Top navigation actions: History, Save analysis, New analysis.
+- Persistent saved analyses stored in browser local storage with duplicate prevention and a compact restore/delete list.
 - Result actions: Copy result, Export analysis, Regenerate.
 - Responsive SaaS-style UI with icons.
 - GitHub repository published at `https://github.com/marisagriffa/ai-workflow-discovery-assistant`.
@@ -66,23 +67,23 @@ It must never describe planned or mocked behavior as fully implemented.
 3. User edits or replaces business notes.
 4. User clicks `Analyze Workflow` or `Regenerate`.
 5. App creates a structured analysis using local deterministic helper logic.
-6. User may save the analysis in session state, restore recent history, copy output text, export a text file, or start a new analysis.
+6. User may save the analysis to browser local storage, restore or delete saved analyses, restore recent history, copy output text, export a text file, or start a new analysis.
 
 ### Current Limitations
 
 - No real LLM/API integration.
 - No backend.
-- No persistent database or local storage.
+- No backend database.
 - No authentication or team workspace.
 - No permanent automated test suite.
-- History and saved analyses are session-only React state.
+- History is session-only React state.
 - Export format is plain text only.
 
 ### Mocked Or Not Functional
 
 - "AI analysis" is mocked by local rule-based logic in `src/workflowAnalyzer.js`.
 - History restores only the most recent previous in-memory analysis.
-- Saved analyses only increments and stores analyses in current runtime memory; there is no saved list UI.
+- Saved analyses persist only in the current browser through local storage; they do not sync across devices or users.
 - Copy depends on browser clipboard permissions.
 - Integrations with Slack, Jira, Notion, Gmail, Drive, ServiceNow, Salesforce, and NetSuite are planned only.
 
@@ -164,7 +165,7 @@ It must never describe planned or mocked behavior as fully implemented.
 
 - **Description:** The app shall provide a Saved analyses action.
 - **Priority:** Medium
-- **Acceptance criteria:** Current implementation stores analyses in session state, caps at 8, updates count badge, and shows status text.
+- **Acceptance criteria:** Current implementation stores analyses in browser local storage, prevents duplicate saves, caps at 8, updates count badge, displays a compact saved list, restores saved notes and analysis output, supports delete, and shows status text.
 
 ### FR-014 New Analysis
 
@@ -213,7 +214,7 @@ It must never describe planned or mocked behavior as fully implemented.
 - **External services:** None in the app. GitHub is used for repository hosting.
 - **Environment variables:** None required. Future provider keys must live in environment variables and never be committed.
 - **Testing tools:** No permanent test framework. Development validation has used `npm run build` and temporary Playwright checks.
-- **Known technical debt:** No real AI integration, no persistence, no saved-analysis list UI, no formal tests, no lint/format tooling, no routing, no backend, and no export formats beyond plain text.
+- **Known technical debt:** No real AI integration, no backend database, no formal tests, no lint/format tooling, no routing, and no export formats beyond plain text.
 
 ## 7. Git and Delivery Workflow
 
@@ -260,6 +261,8 @@ It must never describe planned or mocked behavior as fully implemented.
 - Copy/export functionality.
 - GitHub repository publication.
 - README and AGENTS contributor guide.
+- `dev` branch and PR-based workflow setup.
+- Persistent saved analyses with restore and delete actions.
 
 ### In Progress
 
@@ -268,11 +271,10 @@ It must never describe planned or mocked behavior as fully implemented.
 ### Planned
 
 - Real LLM-backed analysis.
-- Persistent saved analyses/history.
+- Persistent history.
 - Editable output sections.
 - Markdown/PDF export.
 - Formal automated tests.
-- `dev` branch and PR-based workflow setup.
 
 ### Deferred
 
@@ -283,14 +285,13 @@ It must never describe planned or mocked behavior as fully implemented.
 
 ### Recommended Next Task
 
-Create a `dev` branch from `main`, push it to GitHub, and use it as the integration branch for future feature work.
+Add editable output sections so users can refine generated briefs before copy or export.
 
 ## 11. Open Questions
 
 - Which LLM provider and model should power production analysis?
 - Should analysis history persist in local storage, a backend database, or both?
 - Which export format should be prioritized after plain text: Markdown, PDF, DOCX, or project-management tickets?
-- Should saved analyses have a full list/detail UI?
 - What industries or workflow templates should be supported first?
 - What success metrics should be customizable by the user?
 - Which third-party integration should be implemented first?

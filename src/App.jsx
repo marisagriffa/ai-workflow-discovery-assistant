@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import { analyzeWorkflow, sampleNotes } from "./workflowAnalyzer.js";
 
+const savedAnalysesStorageKey = "ai-workflow-discovery-saved-analyses-v1";
+const maxSavedAnalyses = 8;
+
 const sectionMeta = [
   { key: "currentWorkflow", title: "Current workflow", tone: "teal", icon: "flow" },
   { key: "bottlenecks", title: "Bottlenecks", tone: "red", icon: "alert" },
@@ -18,7 +21,7 @@ function App() {
   const [analysis, setAnalysis] = useState(() => analyzeWorkflow(sampleNotes));
   const [hasAnalyzed, setHasAnalyzed] = useState(true);
   const [history, setHistory] = useState(() => [analyzeWorkflow(sampleNotes)]);
-  const [savedAnalyses, setSavedAnalyses] = useState([]);
+  const [savedAnalyses, setSavedAnalyses] = useState(loadSavedAnalyses);
   const [statusMessage, setStatusMessage] = useState("Demo brief generated from sample notes.");
 
   const stats = useMemo(() => {
@@ -60,8 +63,42 @@ function App() {
   }
 
   function handleSaveAnalysis() {
-    setSavedAnalyses((items) => [analysis, ...items].slice(0, 8));
-    setStatusMessage("Analysis saved for portfolio review.");
+    const savedAnalysis = createSavedAnalysis(notes, analysis);
+
+    if (savedAnalyses.some((item) => isSameSavedAnalysis(item, savedAnalysis))) {
+      setStatusMessage("This analysis is already saved.");
+      return;
+    }
+
+    const nextSavedAnalyses = [savedAnalysis, ...savedAnalyses].slice(0, maxSavedAnalyses);
+    const didPersist = persistSavedAnalyses(nextSavedAnalyses);
+
+    setSavedAnalyses(nextSavedAnalyses);
+    setStatusMessage(
+      didPersist
+        ? "Analysis saved and will remain available after refresh."
+        : "Analysis saved for this session. Browser storage was unavailable."
+    );
+  }
+
+  function handleRestoreSavedAnalysis(savedAnalysis) {
+    setNotes(savedAnalysis.notes);
+    setAnalysis(savedAnalysis.analysis);
+    setHasAnalyzed(true);
+    setHistory((items) => [savedAnalysis.analysis, ...items].slice(0, 6));
+    setStatusMessage(`Restored saved analysis from ${formatSavedDate(savedAnalysis.createdAt)}.`);
+  }
+
+  function handleDeleteSavedAnalysis(savedAnalysisId) {
+    const nextSavedAnalyses = savedAnalyses.filter((savedAnalysis) => savedAnalysis.id !== savedAnalysisId);
+    const didPersist = persistSavedAnalyses(nextSavedAnalyses);
+
+    setSavedAnalyses(nextSavedAnalyses);
+    setStatusMessage(
+      didPersist
+        ? "Saved analysis deleted."
+        : "Saved analysis deleted for this session. Browser storage was unavailable."
+    );
   }
 
   async function handleCopyResult() {
@@ -103,7 +140,7 @@ function App() {
           </button>
           <button className="ghost-button" type="button" onClick={handleSaveAnalysis}>
             <Icon name="bookmark" />
-            Saved analyses
+            Save analysis
             <span className="count-badge">{savedAnalyses.length}</span>
           </button>
           <button className="new-analysis-button" type="button" onClick={handleClear}>
@@ -143,6 +180,41 @@ function App() {
               Clear
             </button>
           </div>
+
+          <section className="saved-panel" aria-label="Saved analyses">
+            <div className="saved-panel-header">
+              <div>
+                <h2>Saved analyses</h2>
+                <p>{savedAnalyses.length} of {maxSavedAnalyses} saved locally</p>
+              </div>
+            </div>
+            {savedAnalyses.length ? (
+              <ul className="saved-list">
+                {savedAnalyses.map((savedAnalysis) => (
+                  <li key={savedAnalysis.id} className="saved-item">
+                    <button
+                      className="saved-restore-button"
+                      type="button"
+                      onClick={() => handleRestoreSavedAnalysis(savedAnalysis)}
+                    >
+                      <span>{getSavedAnalysisTitle(savedAnalysis.notes)}</span>
+                      <small>{formatSavedDate(savedAnalysis.createdAt)}</small>
+                    </button>
+                    <button
+                      className="icon-button danger"
+                      type="button"
+                      aria-label={`Delete ${getSavedAnalysisTitle(savedAnalysis.notes)}`}
+                      onClick={() => handleDeleteSavedAnalysis(savedAnalysis.id)}
+                    >
+                      <Icon name="trash" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="saved-empty">Saved analyses will appear here after you save a brief.</p>
+            )}
+          </section>
 
           <div className="options-area">
             <button className="analyze-button" type="button" onClick={handleAnalyze}>
@@ -207,6 +279,96 @@ function formatAnalysisForExport(analysis) {
     .join("\n\n");
 }
 
+function loadSavedAnalyses() {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const storedAnalyses = window.localStorage.getItem(savedAnalysesStorageKey);
+
+    if (!storedAnalyses) {
+      return [];
+    }
+
+    const parsedAnalyses = JSON.parse(storedAnalyses);
+
+    if (!Array.isArray(parsedAnalyses)) {
+      return [];
+    }
+
+    return parsedAnalyses.filter(isSavedAnalysis).slice(0, maxSavedAnalyses);
+  } catch {
+    return [];
+  }
+}
+
+function persistSavedAnalyses(savedAnalyses) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    window.localStorage.setItem(savedAnalysesStorageKey, JSON.stringify(savedAnalyses));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function createSavedAnalysis(notes, analysis) {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+    notes,
+    analysis
+  };
+}
+
+function isSameSavedAnalysis(firstAnalysis, secondAnalysis) {
+  return (
+    firstAnalysis.notes === secondAnalysis.notes &&
+    JSON.stringify(firstAnalysis.analysis) === JSON.stringify(secondAnalysis.analysis)
+  );
+}
+
+function isSavedAnalysis(savedAnalysis) {
+  return Boolean(
+    savedAnalysis &&
+      typeof savedAnalysis.id === "string" &&
+      typeof savedAnalysis.createdAt === "string" &&
+      typeof savedAnalysis.notes === "string" &&
+      savedAnalysis.analysis &&
+      typeof savedAnalysis.analysis === "object" &&
+      sectionMeta.every((section) => Array.isArray(savedAnalysis.analysis[section.key]))
+  );
+}
+
+function getSavedAnalysisTitle(notes) {
+  const firstLine = notes.trim().split("\n").find(Boolean);
+
+  if (!firstLine) {
+    return "Untitled analysis";
+  }
+
+  return firstLine.length > 54 ? `${firstLine.slice(0, 51)}...` : firstLine;
+}
+
+function formatSavedDate(createdAt) {
+  const date = new Date(createdAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown date";
+  }
+
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
 function AnalysisSection({ title, items, tone, icon }) {
   return (
     <article className="analysis-row">
@@ -240,6 +402,7 @@ function Icon({ name }) {
     personCheck: <path d="M16 19c0-2.2-2.7-4-6-4s-6 1.8-6 4m6-7a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 3 2 2 4-5" />,
     plus: <path d="M12 5v14M5 12h14" />,
     spark: <path d="M12 2 9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5L12 2Z" />,
+    trash: <path d="M4 7h16m-10 4v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3" />,
     user: <path d="M20 21c0-3.3-3.6-6-8-6s-8 2.7-8 6m8-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
   };
 
