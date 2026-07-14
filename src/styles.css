@@ -198,11 +198,7 @@ select:focus {
 }
 
 .options-area {
-  margin: auto -22px -22px;
-  padding: 22px;
-  border-top: 1px solid #e5eaf2;
-  background: #fcfdff;
-  border-radius: 0 0 8px 8px;
+  margin: 0 0 32px;
 }
 
 .analyze-button,
@@ -255,6 +251,18 @@ select:focus {
 .outline-button:hover {
   border-color: #0f9f9a;
   background: #eefdfa;
+}
+
+.outline-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+  transform: none;
+  box-shadow: none;
+}
+
+.outline-button:disabled:hover {
+  border-color: #b9ddd9;
+  background: #ffffff;
 }
 
 .ghost-button,
@@ -466,6 +474,19 @@ select:focus {
 
 .results-list {
   display: grid;
+}
+
+.results-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 18px 22px;
+  border-top: 1px solid #e5eaf2;
+  background: #fbfcff;
+}
+
+.generate-user-stories-button {
+  color: #7c3bdc;
+  border-color: #d8caf6;
 }
 
 .analysis-row {
