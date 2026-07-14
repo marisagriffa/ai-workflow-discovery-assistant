@@ -53,7 +53,8 @@ It must never describe planned or mocked behavior as fully implemented.
   - Implementation Impact
 - Top navigation actions: History, Save analysis, New analysis.
 - Persistent saved analyses stored in browser local storage with duplicate prevention and a compact restore/delete list.
-- Result actions: Copy result, Export analysis, Regenerate, and a disabled Generate User Stories placeholder.
+- Result actions: Copy result, Export analysis, Regenerate, and Generate User Stories when a valid workflow analysis exists.
+- Dedicated user stories view with individual story copy, return-to-analysis navigation, and Jira-friendly CSV export for all generated stories.
 - Responsive SaaS-style UI with icons.
 - GitHub repository published at `https://github.com/marisagriffa/ai-workflow-discovery-assistant`.
 
@@ -64,7 +65,8 @@ It must never describe planned or mocked behavior as fully implemented.
 3. User edits or replaces business notes.
 4. User clicks `Analyze Workflow` or `Regenerate`.
 5. App creates a structured analysis using local deterministic helper logic.
-6. User may save the analysis to browser local storage, restore or delete saved analyses, restore recent history, copy output text, export a text file, or start a new analysis.
+6. User may generate structured user stories from the current analysis, copy individual stories, export all stories as a Jira-friendly CSV, and return to the workflow analysis.
+7. User may save the analysis and generated user stories to browser local storage, update an existing saved analysis after changes, restore or delete saved analyses, restore recent history, copy output text, export a text file, or start a new analysis.
 
 ### Current Limitations
 
@@ -74,13 +76,14 @@ It must never describe planned or mocked behavior as fully implemented.
 - No authentication or team workspace.
 - No permanent automated test suite.
 - History is session-only React state.
-- Export format is plain text only.
+- Primary analysis export format is plain text only.
+- Generated user stories export as a single CSV only.
 
 ### Mocked Or Not Functional
 
 - "AI analysis" is mocked by local rule-based logic in `src/workflowAnalyzer.js`.
 - History restores only the most recent previous in-memory analysis.
-- Saved analyses persist only in the current browser through local storage; they do not sync across devices or users.
+- Saved analyses and generated user stories persist only in the current browser through local storage; they do not sync across devices or users.
 - Copy depends on browser clipboard permissions.
 - Integrations with Slack, Jira, Notion, Gmail, Drive, ServiceNow, Salesforce, and NetSuite are planned only.
 
@@ -118,9 +121,9 @@ It must never describe planned or mocked behavior as fully implemented.
 
 ### FR-006 User Stories
 
-- **Description:** The app shall expose a disabled Generate User Stories placeholder for future secondary output generation.
+- **Description:** The app shall generate structured user stories from the current workflow analysis using local deterministic logic.
 - **Priority:** Medium
-- **Acceptance criteria:** User stories are not part of the primary analysis results, export, or saved-analysis validation; the disabled action appears after the primary analysis results.
+- **Acceptance criteria:** Generate User Stories is enabled only when a valid workflow analysis exists; generated stories appear in a dedicated in-app view; each story includes an ID such as `US-001`, a short title, and the complete story text using `Como [rol], quiero [funcionalidad], para [valor].`; acceptance criteria are not generated.
 
 ### FR-007 Acceptance Criteria
 
@@ -162,7 +165,7 @@ It must never describe planned or mocked behavior as fully implemented.
 
 - **Description:** The app shall provide a Saved analyses action.
 - **Priority:** Medium
-- **Acceptance criteria:** Current implementation stores analyses in browser local storage, prevents duplicate saves, caps at 8, updates count badge, displays a compact saved list, restores saved notes and analysis output, supports delete, and shows status text.
+- **Acceptance criteria:** Current implementation stores analyses and generated user stories in browser local storage, prevents duplicate saves, caps at 8, updates count badge, displays a compact saved list, restores saved notes, analysis output, and generated user stories, supports delete, shows status text, clearly indicates saved or unsaved state, and updates an existing saved analysis instead of creating a duplicate when saved content changes.
 
 ### FR-014 New Analysis
 
@@ -182,6 +185,12 @@ It must never describe planned or mocked behavior as fully implemented.
 - **Priority:** Medium
 - **Acceptance criteria:** Clicking `Export analysis` downloads `ai-workflow-discovery-analysis.txt` containing all primary result sections in text format.
 
+### FR-017 User Story CSV Export
+
+- **Description:** The app shall export all generated user stories as one Jira-friendly CSV file.
+- **Priority:** Medium
+- **Acceptance criteria:** CSV export is available from the dedicated user stories view; the CSV includes `Issue Type`, `Summary`, `Description`, and `Story ID`; every row uses `Story` as the Issue Type; individual per-story CSV export is not provided.
+
 ## 4. Non-Functional Requirements
 
 - **Usability:** Interface must feel like a real internal SaaS workflow tool, not a simple demo page.
@@ -196,13 +205,13 @@ It must never describe planned or mocked behavior as fully implemented.
 ## 5. AI Behavior
 
 - **Expected AI input:** Unstructured process notes containing steps, teams, tools, pain points, goals, approvals, compliance language, and target outcomes.
-- **Expected structured output:** The nine output sections listed in Current Product Scope.
+- **Expected structured output:** The six primary workflow analysis sections listed in Current Product Scope, plus optional generated user stories as a secondary artifact.
 - **Human-in-the-loop rules:** AI may draft and classify, but humans validate, approve, and own final decisions.
-- **Where AI may act autonomously:** Extract fields, classify workflow type/urgency/owner, draft summaries, propose user stories, suggest acceptance criteria, identify bottlenecks, and recommend automation candidates.
+- **Where AI may act autonomously:** Extract fields, classify workflow type/urgency/owner, draft summaries, propose user stories, identify bottlenecks, and recommend automation candidates.
 - **Where human review is required:** High-risk, high-value, policy-sensitive, ambiguous, low-confidence, contradictory, or empathy-heavy cases.
 - **Where final human ownership is mandatory:** Policy exceptions, irreversible system-of-record updates, compliance/legal/financial decisions, rollout approval, and success metric acceptance.
 - **Error and fallback behavior:** Empty input returns guidance; copy failures show fallback status; future LLM failures should preserve user input and show a retryable error.
-- **Output validation expectations:** Output must include all required sections, avoid claiming implemented integrations that do not exist, and separate automation from human review.
+- **Output validation expectations:** Output must include all required primary sections, avoid claiming implemented integrations that do not exist, separate automation from human review, and keep generated user stories separate from acceptance criteria.
 
 ## 6. Technical Context
 
@@ -211,7 +220,7 @@ It must never describe planned or mocked behavior as fully implemented.
 - **External services:** None in the app. GitHub is used for repository hosting.
 - **Environment variables:** None required. Future provider keys must live in environment variables and never be committed.
 - **Testing tools:** No permanent test framework. Development validation has used `npm run build` and temporary Playwright checks.
-- **Known technical debt:** No real AI integration, no backend database, no formal tests, no lint/format tooling, no routing, and no export formats beyond plain text.
+- **Known technical debt:** No real AI integration, no backend database, no formal tests, no lint/format tooling, no routing, no PDF export, and no export formats beyond primary-analysis text and user-story CSV.
 
 ## 7. Git and Delivery Workflow
 
@@ -260,6 +269,7 @@ It must never describe planned or mocked behavior as fully implemented.
 - README and AGENTS contributor guide.
 - `dev` branch and PR-based workflow setup.
 - Persistent saved analyses with restore and delete actions.
+- Enabled deterministic user story generation with copy, saved-state tracking, saved-analysis updates, restore support, and Jira-friendly CSV export.
 
 ### In Progress
 
@@ -269,7 +279,6 @@ It must never describe planned or mocked behavior as fully implemented.
 
 - Real LLM-backed analysis.
 - Persistent history.
-- Enabled user story generation.
 - Editable output sections.
 - Markdown/PDF export.
 - Formal automated tests.

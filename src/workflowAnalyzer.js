@@ -47,19 +47,6 @@ export function analyzeWorkflow(rawNotes) {
       "Maintain an audit trail showing who changed what, when, and why.",
       `Integrate with ${signals.tools.length ? signals.tools.slice(0, 4).join(", ") : "the current communication and system-of-record tools"}.`
     ],
-    userStories: [
-      `As ${signals.actor}, I want to submit complete information once so the process can move without repeated follow-up.`,
-      "As a reviewer, I want clear context and recommended actions so I can approve or reject quickly.",
-      "As an operator, I want exceptions highlighted so I can focus on cases that need judgment.",
-      "As a process owner, I want reporting on cycle time, volume, and failure reasons so I can improve the workflow."
-    ],
-    acceptanceCriteria: [
-      "A request can be created with all required fields, attachments, owner, and due date.",
-      "Reviewers can approve, reject, or request changes with a required reason.",
-      "The workflow records status changes and preserves a searchable audit trail.",
-      "Approved work is posted or prepared for the system of record with validation checks.",
-      "Exception cases are routed to a human queue with priority and recommended next steps."
-    ],
     automationOpportunities: [
       "Extract structured fields from emails, forms, documents, and attachments.",
       "Classify requests by type, urgency, owner, and missing information.",
@@ -73,13 +60,6 @@ export function analyzeWorkflow(rawNotes) {
       "Customer, employee, or vendor communications that require judgment or empathy.",
       "Final approval for exceptions, overrides, and irreversible system updates."
     ],
-    testScenarios: [
-      "Happy path with complete information and standard approval.",
-      "Submission with missing attachment or required field.",
-      "Policy exception requiring human approval and audit reason.",
-      "Duplicate or conflicting request detection.",
-      "Downstream system failure with retry and operator notification."
-    ],
     implementationImpact: [
       "Estimated time saved: 30-45% cycle-time reduction once intake, routing, and status updates are automated.",
       "Manual steps reduced: remove duplicate data entry, repeated follow-up emails, manual status checks, and first-pass policy screening.",
@@ -87,6 +67,48 @@ export function analyzeWorkflow(rawNotes) {
       "Success metrics: average cycle time, exception rate, reviewer touches per request, automation confidence, audit completeness, and user satisfaction."
     ]
   };
+}
+
+export function generateUserStories(analysis, rawNotes) {
+  const notes = rawNotes.trim();
+  const signals = extractSignals(notes);
+
+  if (!notes || !analysis || analysis === emptyAnalysis) {
+    return [];
+  }
+
+  const storyContext = getStoryContext(analysis);
+
+  return [
+    createUserStory(
+      1,
+      "Ingreso estructurado de solicitudes",
+      signals.storyRole,
+      "enviar la informacion requerida una sola vez con documentos y contexto completos",
+      storyContext.intakeValue
+    ),
+    createUserStory(
+      2,
+      "Revision guiada para aprobadores",
+      "un revisor",
+      "ver el contexto, las reglas aplicables y una recomendacion antes de aprobar o rechazar",
+      storyContext.reviewValue
+    ),
+    createUserStory(
+      3,
+      "Gestion de excepciones",
+      "un operador",
+      "recibir los casos incompletos, contradictorios o sensibles en una cola priorizada",
+      storyContext.exceptionValue
+    ),
+    createUserStory(
+      4,
+      "Seguimiento operativo del flujo",
+      "un responsable del proceso",
+      "consultar metricas de ciclo, volumen, excepciones y automatizacion",
+      storyContext.reportingValue
+    )
+  ];
 }
 
 function extractSignals(notes) {
@@ -116,8 +138,48 @@ function extractSignals(notes) {
         : lowered.includes("sales")
           ? "a sales rep"
           : "a requester",
+    storyRole: lowered.includes("employee")
+      ? "un empleado"
+      : lowered.includes("customer")
+        ? "un cliente"
+        : lowered.includes("sales")
+          ? "un representante de ventas"
+          : "un solicitante",
     tools,
     hasPolicy: /policy|compliance|audit|approval|risk/.test(lowered)
+  };
+}
+
+function createUserStory(index, title, role, capability, value) {
+  return {
+    id: `US-${String(index).padStart(3, "0")}`,
+    title,
+    storyText: `Como ${role}, quiero ${capability}, para ${value}.`
+  };
+}
+
+function getStoryContext(analysis) {
+  const hasVisibilityRequirement = analysis.requirements?.some((item) =>
+    item.toLowerCase().includes("visibility")
+  );
+  const hasHumanException = analysis.humanReviewPoints?.some((item) =>
+    /missing|contradictory|low-confidence|risk|policy/i.test(item)
+  );
+  const hasMetrics = analysis.implementationImpact?.some((item) =>
+    /cycle time|exception rate|success metrics|automation/i.test(item)
+  );
+
+  return {
+    intakeValue: "reducir retrabajo, seguimientos repetidos y demoras de ciclo",
+    reviewValue: hasVisibilityRequirement
+      ? "mantener visibilidad de punta a punta y acelerar la decision"
+      : "tomar decisiones consistentes con menos busqueda manual",
+    exceptionValue: hasHumanException
+      ? "priorizar los casos que requieren juicio humano y control de riesgo"
+      : "resolver excepciones sin perder trazabilidad",
+    reportingValue: hasMetrics
+      ? "medir la adopcion, la calidad y la mejora continua del flujo"
+      : "entender el rendimiento del proceso y sus oportunidades de mejora"
   };
 }
 
@@ -125,11 +187,8 @@ const emptyAnalysis = {
   currentWorkflow: ["Add notes to generate a structured view of the current process."],
   bottlenecks: ["Bottlenecks will appear after the workflow is analyzed."],
   requirements: ["Requirements will be inferred from the notes and process goals."],
-  userStories: ["User stories will be drafted for requesters, reviewers, operators, and process owners."],
-  acceptanceCriteria: ["Acceptance criteria will describe the conditions for a working AI-enabled workflow."],
   automationOpportunities: ["Automation candidates will be ranked from intake through final system updates."],
   humanReviewPoints: ["Human review points will identify where judgment, risk control, or empathy is needed."],
-  testScenarios: ["Test scenarios will cover happy path, exception path, and integration failure cases."],
   implementationImpact: [
     "Estimated time saved, manual steps reduced, adoption approach, and success metrics will appear after analysis."
   ]
