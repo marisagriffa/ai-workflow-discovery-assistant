@@ -1,24 +1,28 @@
 import { useMemo, useState } from "react";
-import { analyzeWorkflow, sampleNotes } from "./workflowAnalyzer.js";
+import { analyzeWorkflow, generateUserStories, sampleNotes } from "./workflowAnalyzer.js";
+
+const savedAnalysesStorageKey = "ai-workflow-discovery-saved-analyses-v1";
+const maxSavedAnalyses = 8;
 
 const sectionMeta = [
   { key: "currentWorkflow", title: "Current workflow", tone: "teal", icon: "flow" },
   { key: "bottlenecks", title: "Bottlenecks", tone: "red", icon: "alert" },
   { key: "requirements", title: "Requirements", tone: "blue", icon: "list" },
-  { key: "userStories", title: "User stories", tone: "violet", icon: "user" },
-  { key: "acceptanceCriteria", title: "Acceptance criteria", tone: "green", icon: "check" },
   { key: "automationOpportunities", title: "AI automation opportunities", tone: "teal", icon: "spark" },
   { key: "humanReviewPoints", title: "Human review points", tone: "amber", icon: "personCheck" },
-  { key: "testScenarios", title: "Test scenarios", tone: "blue", icon: "flask" },
   { key: "implementationImpact", title: "Implementation Impact", tone: "green", icon: "chart" }
 ];
 
 function App() {
   const [notes, setNotes] = useState(sampleNotes);
   const [analysis, setAnalysis] = useState(() => analyzeWorkflow(sampleNotes));
+  const [userStories, setUserStories] = useState(() =>
+    generateUserStories(analyzeWorkflow(sampleNotes), sampleNotes)
+  );
+  const [areUserStoriesExpanded, setAreUserStoriesExpanded] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(true);
-  const [history, setHistory] = useState(() => [analyzeWorkflow(sampleNotes)]);
-  const [savedAnalyses, setSavedAnalyses] = useState([]);
+  const [savedAnalyses, setSavedAnalyses] = useState(loadSavedAnalyses);
+  const [savedAnalysisId, setSavedAnalysisId] = useState(null);
   const [statusMessage, setStatusMessage] = useState("Demo brief generated from sample notes.");
 
   const stats = useMemo(() => {
@@ -30,38 +34,108 @@ function App() {
   }, [notes]);
 
   const analysisText = useMemo(() => formatAnalysisForExport(analysis), [analysis]);
+  const currentAnalysisKey = useMemo(
+    () => createAnalysisKey(notes, analysis, userStories),
+    [notes, analysis, userStories]
+  );
+  const analysisSaveState = useMemo(
+    () => getAnalysisSaveState(currentAnalysisKey, savedAnalysisId, savedAnalyses),
+    [currentAnalysisKey, savedAnalysisId, savedAnalyses]
+  );
 
   function handleAnalyze() {
     const nextAnalysis = analyzeWorkflow(notes);
+    const nextStories = generateUserStories(nextAnalysis, notes);
     setAnalysis(nextAnalysis);
+    setUserStories(nextStories);
+    setAreUserStoriesExpanded(false);
     setHasAnalyzed(true);
-    setHistory((items) => [nextAnalysis, ...items].slice(0, 6));
+    setSavedAnalysisId(null);
     setStatusMessage("Workflow brief refreshed with adoption guidance.");
   }
 
   function handleClear() {
     setNotes("");
-    setAnalysis(analyzeWorkflow(""));
+    const nextAnalysis = analyzeWorkflow("");
+    setAnalysis(nextAnalysis);
+    setUserStories([]);
+    setAreUserStoriesExpanded(false);
     setHasAnalyzed(false);
+    setSavedAnalysisId(null);
     setStatusMessage("Ready for a new workflow discovery session.");
   }
 
-  function handleRestoreHistory() {
-    const previous = history[1] ?? history[0];
-
-    if (!previous) {
-      setStatusMessage("No previous analyses yet.");
+  function handleSaveAnalysis() {
+    if (analysisSaveState.isSaved) {
+      setSavedAnalysisId(analysisSaveState.savedAnalysis.id);
       return;
     }
 
-    setAnalysis(previous);
-    setHasAnalyzed(true);
-    setStatusMessage("Most recent historical analysis restored.");
+    if (analysisSaveState.savedAnalysis) {
+      const updatedAnalysis = {
+        ...analysisSaveState.savedAnalysis,
+        updatedAt: new Date().toISOString(),
+        notes,
+        analysis,
+        userStories
+      };
+      const nextSavedAnalyses = savedAnalyses.map((item) =>
+        item.id === updatedAnalysis.id ? updatedAnalysis : item
+      );
+      const didPersist = persistSavedAnalyses(nextSavedAnalyses);
+
+      setSavedAnalyses(nextSavedAnalyses);
+      setSavedAnalysisId(updatedAnalysis.id);
+      setStatusMessage(
+        didPersist
+          ? "Analysis saved."
+          : "Saved analysis updated for this session. Browser storage was unavailable."
+      );
+      return;
+    }
+
+    const duplicateSavedAnalysis = savedAnalyses.find((item) => createSavedAnalysisKey(item) === currentAnalysisKey);
+
+    if (duplicateSavedAnalysis) {
+      setSavedAnalysisId(duplicateSavedAnalysis.id);
+      return;
+    }
+
+    const savedAnalysis = createSavedAnalysis(notes, analysis, userStories);
+    const nextSavedAnalyses = [savedAnalysis, ...savedAnalyses].slice(0, maxSavedAnalyses);
+    const didPersist = persistSavedAnalyses(nextSavedAnalyses);
+
+    setSavedAnalyses(nextSavedAnalyses);
+    setSavedAnalysisId(savedAnalysis.id);
+    setStatusMessage(
+      didPersist
+        ? "Analysis saved and will remain available after refresh."
+        : "Analysis saved for this session. Browser storage was unavailable."
+    );
   }
 
-  function handleSaveAnalysis() {
-    setSavedAnalyses((items) => [analysis, ...items].slice(0, 8));
-    setStatusMessage("Analysis saved for portfolio review.");
+  function handleRestoreSavedAnalysis(savedAnalysis) {
+    setNotes(savedAnalysis.notes);
+    setAnalysis(savedAnalysis.analysis);
+    setUserStories(savedAnalysis.userStories ?? []);
+    setAreUserStoriesExpanded(false);
+    setHasAnalyzed(true);
+    setSavedAnalysisId(savedAnalysis.id);
+    queuePageTopScroll();
+    setStatusMessage(`Restored saved analysis from ${formatSavedDate(savedAnalysis.createdAt)}.`);
+  }
+
+  function handleDeleteSavedAnalysis(savedAnalysisId) {
+    const nextSavedAnalyses = savedAnalyses.filter((savedAnalysis) => savedAnalysis.id !== savedAnalysisId);
+    const didPersist = persistSavedAnalyses(nextSavedAnalyses);
+
+    setSavedAnalyses(nextSavedAnalyses);
+    setSavedAnalysisId((currentId) => (currentId === savedAnalysisId ? null : currentId));
+    setStatusMessage(
+      didPersist
+        ? "Saved analysis deleted."
+        : "Saved analysis deleted for this session. Browser storage was unavailable."
+    );
   }
 
   async function handleCopyResult() {
@@ -84,6 +158,27 @@ function App() {
     setStatusMessage("Analysis exported as a text file.");
   }
 
+  async function handleCopyStory(story) {
+    try {
+      await navigator.clipboard.writeText(`${story.id} - ${story.title}\n${story.storyText}`);
+      setStatusMessage(`${story.id} copied to clipboard.`);
+    } catch {
+      setStatusMessage("Copy was blocked by the browser. CSV export is still available.");
+    }
+  }
+
+  function handleExportUserStories() {
+    const csv = formatUserStoriesForCsv(userStories);
+    const file = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "ai-workflow-discovery-user-stories.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+    setStatusMessage("User stories exported as a Jira-friendly CSV.");
+  }
+
   return (
     <main className="app-shell">
       <header className="topbar">
@@ -97,14 +192,9 @@ function App() {
           </div>
         </div>
         <nav className="topbar-actions" aria-label="Analysis workspace">
-          <button className="ghost-button" type="button" onClick={handleRestoreHistory}>
-            <Icon name="clock" />
-            History
-          </button>
           <button className="ghost-button" type="button" onClick={handleSaveAnalysis}>
-            <Icon name="bookmark" />
-            Saved analyses
-            <span className="count-badge">{savedAnalyses.length}</span>
+            <Icon name={analysisSaveState.isSaved ? "bookmarkFilled" : "bookmark"} />
+            Save analysis
           </button>
           <button className="new-analysis-button" type="button" onClick={handleClear}>
             <Icon name="plus" />
@@ -120,7 +210,7 @@ function App() {
               <Icon name="note" />
             </span>
             <div>
-              <h2>1. Paste or type your business process notes</h2>
+              <h2>Paste or type your business process notes</h2>
               <p>Add the current steps, teams, tools, pain points, and target outcome.</p>
             </div>
           </div>
@@ -157,6 +247,41 @@ function App() {
               {statusMessage}
             </p>
           </div>
+
+          <section className="saved-panel" aria-label="Saved analyses">
+            <div className="saved-panel-header">
+              <div>
+                <h2>Saved analyses</h2>
+                <p>{savedAnalyses.length} of {maxSavedAnalyses} saved locally</p>
+              </div>
+            </div>
+            {savedAnalyses.length ? (
+              <ul className="saved-list">
+                {savedAnalyses.map((savedAnalysis) => (
+                  <li key={savedAnalysis.id} className="saved-item">
+                    <button
+                      className="saved-restore-button"
+                      type="button"
+                      onClick={() => handleRestoreSavedAnalysis(savedAnalysis)}
+                    >
+                      <span>{getSavedAnalysisTitle(savedAnalysis.notes)}</span>
+                      <small>{formatSavedDate(savedAnalysis.createdAt)}</small>
+                    </button>
+                    <button
+                      className="icon-button danger"
+                      type="button"
+                      aria-label={`Delete ${getSavedAnalysisTitle(savedAnalysis.notes)}`}
+                      onClick={() => handleDeleteSavedAnalysis(savedAnalysis.id)}
+                    >
+                      <Icon name="trash" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="saved-empty">Saved analyses will appear here after you save a brief.</p>
+            )}
+          </section>
         </aside>
 
         <section className="results-panel" aria-live="polite">
@@ -192,6 +317,13 @@ function App() {
               />
             ))}
           </div>
+          <UserStoriesSection
+            stories={userStories}
+            isExpanded={areUserStoriesExpanded}
+            onToggle={() => setAreUserStoriesExpanded((isExpanded) => !isExpanded)}
+            onCopyStory={handleCopyStory}
+            onExport={handleExportUserStories}
+          />
         </section>
       </section>
     </main>
@@ -205,6 +337,165 @@ function formatAnalysisForExport(analysis) {
       return `${section.title}\n${items.map((item) => `- ${item}`).join("\n")}`;
     })
     .join("\n\n");
+}
+
+function formatUserStoriesForCsv(userStories) {
+  const rows = [
+    ["Issue Type", "Summary", "Description", "Story ID"],
+    ...userStories.map((story) => ["Story", story.title, story.storyText, story.id])
+  ];
+
+  return rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n");
+}
+
+function escapeCsvCell(value) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function queuePageTopScroll() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  });
+}
+
+function loadSavedAnalyses() {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const storedAnalyses = window.localStorage.getItem(savedAnalysesStorageKey);
+
+    if (!storedAnalyses) {
+      return [];
+    }
+
+    const parsedAnalyses = JSON.parse(storedAnalyses);
+
+    if (!Array.isArray(parsedAnalyses)) {
+      return [];
+    }
+
+    return parsedAnalyses.filter(isSavedAnalysis).slice(0, maxSavedAnalyses);
+  } catch {
+    return [];
+  }
+}
+
+function persistSavedAnalyses(savedAnalyses) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    window.localStorage.setItem(savedAnalysesStorageKey, JSON.stringify(savedAnalyses));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function createSavedAnalysis(notes, analysis, userStories) {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+    notes,
+    analysis,
+    userStories
+  };
+}
+
+function createAnalysisKey(notes, analysis, userStories) {
+  return JSON.stringify({ notes, analysis, userStories });
+}
+
+function createSavedAnalysisKey(savedAnalysis) {
+  return createAnalysisKey(savedAnalysis.notes, savedAnalysis.analysis, savedAnalysis.userStories ?? []);
+}
+
+function getAnalysisSaveState(currentAnalysisKey, savedAnalysisId, savedAnalyses) {
+  const savedAnalysis = savedAnalyses.find((item) => item.id === savedAnalysisId);
+  const exactSavedAnalysis = savedAnalyses.find((item) => createSavedAnalysisKey(item) === currentAnalysisKey);
+
+  if (savedAnalysis && createSavedAnalysisKey(savedAnalysis) !== currentAnalysisKey) {
+    return {
+      status: "unsaved",
+      label: "Unsaved",
+      savedAnalysis,
+      isSaved: false
+    };
+  }
+
+  if (savedAnalysis || exactSavedAnalysis) {
+    return {
+      status: "saved",
+      label: "Saved",
+      savedAnalysis: savedAnalysis ?? exactSavedAnalysis,
+      isSaved: true
+    };
+  }
+
+  return {
+    status: "unsaved",
+    label: "Unsaved",
+    savedAnalysis: null,
+    isSaved: false
+  };
+}
+
+function isSavedAnalysis(savedAnalysis) {
+  return Boolean(
+    savedAnalysis &&
+      typeof savedAnalysis.id === "string" &&
+      typeof savedAnalysis.createdAt === "string" &&
+      typeof savedAnalysis.notes === "string" &&
+      savedAnalysis.analysis &&
+      typeof savedAnalysis.analysis === "object" &&
+      sectionMeta.every((section) => Array.isArray(savedAnalysis.analysis[section.key])) &&
+      (savedAnalysis.userStories === undefined || isUserStoryList(savedAnalysis.userStories))
+  );
+}
+
+function isUserStoryList(userStories) {
+  return (
+    Array.isArray(userStories) &&
+    userStories.every((story) =>
+      story &&
+      typeof story.id === "string" &&
+      typeof story.title === "string" &&
+      typeof story.storyText === "string"
+    )
+  );
+}
+
+function getSavedAnalysisTitle(notes) {
+  const firstLine = notes.trim().split("\n").find(Boolean);
+
+  if (!firstLine) {
+    return "Untitled analysis";
+  }
+
+  return firstLine.length > 54 ? `${firstLine.slice(0, 51)}...` : firstLine;
+}
+
+function formatSavedDate(createdAt) {
+  const date = new Date(createdAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown date";
+  }
+
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
 }
 
 function AnalysisSection({ title, items, tone, icon }) {
@@ -223,13 +514,61 @@ function AnalysisSection({ title, items, tone, icon }) {
   );
 }
 
+function UserStoriesSection({ stories, isExpanded, onToggle, onCopyStory, onExport }) {
+  return (
+    <section className="user-stories-section" aria-label="Generated user stories">
+      <button className="story-toggle-button" type="button" onClick={onToggle}>
+        <span>{isExpanded ? "−" : "+"}</span>
+        {isExpanded ? "Hide User Stories" : "View generated User Stories"}
+      </button>
+
+      {isExpanded ? (
+        <div className="story-panel">
+          <div className="story-panel-header">
+            <div>
+              <span className="results-kicker">Generated user stories</span>
+              <h3>Jira-ready story draft</h3>
+            </div>
+            <button className="outline-button strong" type="button" onClick={onExport} disabled={!stories.length}>
+              <Icon name="download" />
+              Export CSV
+            </button>
+          </div>
+
+          {stories.length ? (
+            <div className="story-list">
+              {stories.map((story) => (
+                <article className="story-card" key={story.id}>
+                  <div className="story-card-header">
+                    <div>
+                      <span className="story-id">{story.id}</span>
+                      <h4>{story.title}</h4>
+                    </div>
+                    <button className="outline-button" type="button" onClick={() => onCopyStory(story)}>
+                      <Icon name="copy" />
+                      Copy story
+                    </button>
+                  </div>
+                  <p>{story.storyText}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="stories-empty">User stories will appear after workflow analysis is generated.</p>
+          )}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function Icon({ name }) {
   const icons = {
     alert: <path d="M12 3 2 20h20L12 3Zm0 6v5m0 3h.01" />,
     bookmark: <path d="M6 4h12v17l-6-4-6 4V4Z" />,
+    bookmarkFilled: <path d="M6 4h12v17l-6-4-6 4V4Z" fill="currentColor" />,
     chart: <path d="M4 19V5m0 14h16M8 16v-5m4 5V8m4 8v-7" />,
     check: <path d="M20 6 9 17l-5-5" />,
-    clock: <path d="M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />,
     copy: <path d="M8 8h11v11H8zM5 16H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v1" />,
     download: <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />,
     flask: <path d="M9 3h6m-5 0v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3m-6 12h8" />,
@@ -240,6 +579,7 @@ function Icon({ name }) {
     personCheck: <path d="M16 19c0-2.2-2.7-4-6-4s-6 1.8-6 4m6-7a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 3 2 2 4-5" />,
     plus: <path d="M12 5v14M5 12h14" />,
     spark: <path d="M12 2 9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5L12 2Z" />,
+    trash: <path d="M4 7h16m-10 4v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3" />,
     user: <path d="M20 21c0-3.3-3.6-6-8-6s-8 2.7-8 6m8-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
   };
 

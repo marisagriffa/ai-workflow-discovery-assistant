@@ -32,10 +32,6 @@ The application is designed for teams that need to document, evaluate, and impro
 
 AI improves workflow discovery because it can rapidly transform unstructured notes into consistent documentation. Instead of manually rewriting messy process notes into requirements, test cases, and adoption plans, an AI-assisted workflow can draft the first version and let humans focus on validation, prioritization, risk, and change management.
 
-## AI Operator Approach
-
-An AI Operator is responsible for translating real business work into reliable AI-enabled processes. This project demonstrates that approach through four layers of analysis.
-
 ### Analyzing Existing Workflows
 
 The user enters raw notes describing steps, tools, owners, pain points, compliance needs, and goals. The app structures those notes into a current workflow summary so the team can see how work moves from intake to completion.
