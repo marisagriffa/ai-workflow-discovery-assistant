@@ -8,11 +8,8 @@ const sectionMeta = [
   { key: "currentWorkflow", title: "Current workflow", tone: "teal", icon: "flow" },
   { key: "bottlenecks", title: "Bottlenecks", tone: "red", icon: "alert" },
   { key: "requirements", title: "Requirements", tone: "blue", icon: "list" },
-  { key: "userStories", title: "User stories", tone: "violet", icon: "user" },
-  { key: "acceptanceCriteria", title: "Acceptance criteria", tone: "green", icon: "check" },
   { key: "automationOpportunities", title: "AI automation opportunities", tone: "teal", icon: "spark" },
   { key: "humanReviewPoints", title: "Human review points", tone: "amber", icon: "personCheck" },
-  { key: "testScenarios", title: "Test scenarios", tone: "blue", icon: "flask" },
   { key: "implementationImpact", title: "Implementation Impact", tone: "green", icon: "chart" }
 ];
 
@@ -181,6 +178,20 @@ function App() {
             </button>
           </div>
 
+          <div className="options-area">
+            <button className="analyze-button" type="button" onClick={handleAnalyze}>
+              <Icon name="spark" />
+              Analyze Workflow
+            </button>
+            <p className="privacy-note">
+              <Icon name="lock" />
+              Local demo logic only. Connect a model later when you are ready.
+            </p>
+            <p className="status-note" role="status">
+              {statusMessage}
+            </p>
+          </div>
+
           <section className="saved-panel" aria-label="Saved analyses">
             <div className="saved-panel-header">
               <div>
@@ -215,20 +226,6 @@ function App() {
               <p className="saved-empty">Saved analyses will appear here after you save a brief.</p>
             )}
           </section>
-
-          <div className="options-area">
-            <button className="analyze-button" type="button" onClick={handleAnalyze}>
-              <Icon name="spark" />
-              Analyze Workflow
-            </button>
-            <p className="privacy-note">
-              <Icon name="lock" />
-              Local demo logic only. Connect a model later when you are ready.
-            </p>
-            <p className="status-note" role="status">
-              {statusMessage}
-            </p>
-          </div>
         </aside>
 
         <section className="results-panel" aria-live="polite">
@@ -263,6 +260,12 @@ function App() {
                 items={analysis[section.key]}
               />
             ))}
+          </div>
+          <div className="results-footer">
+            <button className="outline-button generate-user-stories-button" type="button" disabled>
+              <Icon name="user" />
+              Generate User Stories
+            </button>
           </div>
         </section>
       </section>

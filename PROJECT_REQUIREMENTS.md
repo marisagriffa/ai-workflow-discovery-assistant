@@ -48,15 +48,12 @@ It must never describe planned or mocked behavior as fully implemented.
   - Current workflow
   - Bottlenecks
   - Requirements
-  - User stories
-  - Acceptance criteria
   - AI automation opportunities
   - Human review points
-  - Test scenarios
   - Implementation Impact
 - Top navigation actions: History, Save analysis, New analysis.
 - Persistent saved analyses stored in browser local storage with duplicate prevention and a compact restore/delete list.
-- Result actions: Copy result, Export analysis, Regenerate.
+- Result actions: Copy result, Export analysis, Regenerate, and a disabled Generate User Stories placeholder.
 - Responsive SaaS-style UI with icons.
 - GitHub repository published at `https://github.com/marisagriffa/ai-workflow-discovery-assistant`.
 
@@ -121,15 +118,15 @@ It must never describe planned or mocked behavior as fully implemented.
 
 ### FR-006 User Stories
 
-- **Description:** The app shall produce user stories for key workflow participants.
+- **Description:** The app shall expose a disabled Generate User Stories placeholder for future secondary output generation.
 - **Priority:** Medium
-- **Acceptance criteria:** Output includes requester, reviewer, operator, and process-owner perspectives.
+- **Acceptance criteria:** User stories are not part of the primary analysis results, export, or saved-analysis validation; the disabled action appears after the primary analysis results.
 
 ### FR-007 Acceptance Criteria
 
-- **Description:** The app shall define conditions for a working AI-enabled workflow.
+- **Description:** Acceptance criteria generation is deferred from the primary analysis results.
 - **Priority:** High
-- **Acceptance criteria:** Output includes required fields, review actions, audit trail, validation checks, and exception routing.
+- **Acceptance criteria:** Acceptance criteria are not part of the primary analysis results, export, or saved-analysis validation.
 
 ### FR-008 AI Automation Opportunities
 
@@ -145,9 +142,9 @@ It must never describe planned or mocked behavior as fully implemented.
 
 ### FR-010 Test Scenarios
 
-- **Description:** The app shall generate test scenarios for workflow validation.
+- **Description:** Test scenario generation is deferred from the primary analysis results.
 - **Priority:** Medium
-- **Acceptance criteria:** Output covers happy path, missing data, policy exception, duplicate/conflict detection, and downstream system failure.
+- **Acceptance criteria:** Test scenarios are not part of the primary analysis results, export, or saved-analysis validation.
 
 ### FR-011 Implementation Impact
 
@@ -183,7 +180,7 @@ It must never describe planned or mocked behavior as fully implemented.
 
 - **Description:** The app shall export the analysis as a downloadable file.
 - **Priority:** Medium
-- **Acceptance criteria:** Clicking `Export analysis` downloads `ai-workflow-discovery-analysis.txt` containing all sections in text format.
+- **Acceptance criteria:** Clicking `Export analysis` downloads `ai-workflow-discovery-analysis.txt` containing all primary result sections in text format.
 
 ## 4. Non-Functional Requirements
 
@@ -245,9 +242,9 @@ It must never describe planned or mocked behavior as fully implemented.
 
 - **AI workflow transformation positioning:** The product is positioned as a practical AI workflow transformation tool because the goal is adoption-ready process improvement, not only text summarization.
 - **Explicit human review points:** Human review points are required to make AI adoption safer, auditable, and accountable.
-- **Required product actions:** History, Saved analyses, New analysis, Copy, and Export are required because they make the app feel like a usable internal workflow tool and support stakeholder documentation.
+- **Required product actions:** History, Saved analyses, New analysis, Copy, Export, and a future Generate User Stories path are required because they make the app feel like a usable internal workflow tool and support stakeholder documentation.
 - **Professional SaaS look:** The UI must resemble a real internal SaaS product suitable for AI Operator work, not a minimal demo or landing page.
-- **Rejected/deferred ideas:** Marketing-style landing page, purely decorative controls, real LLM integration without credential planning, persistent storage, team collaboration, and third-party workflow integrations were deferred.
+- **Rejected/deferred ideas:** Marketing-style landing page, purely decorative controls, real LLM integration without credential planning, backend storage, team collaboration, and third-party workflow integrations were deferred.
 
 ## 10. Roadmap
 
@@ -256,7 +253,7 @@ It must never describe planned or mocked behavior as fully implemented.
 - React + Vite app scaffold.
 - Professional SaaS UI.
 - Local demo workflow analyzer.
-- All nine output sections.
+- Six primary output sections.
 - Top navigation and result actions.
 - Copy/export functionality.
 - GitHub repository publication.
@@ -272,6 +269,7 @@ It must never describe planned or mocked behavior as fully implemented.
 
 - Real LLM-backed analysis.
 - Persistent history.
+- Enabled user story generation.
 - Editable output sections.
 - Markdown/PDF export.
 - Formal automated tests.
