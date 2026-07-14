@@ -16,10 +16,11 @@ const sectionMeta = [
 function App() {
   const [notes, setNotes] = useState(sampleNotes);
   const [analysis, setAnalysis] = useState(() => analyzeWorkflow(sampleNotes));
-  const [userStories, setUserStories] = useState([]);
-  const [activeView, setActiveView] = useState("analysis");
+  const [userStories, setUserStories] = useState(() =>
+    generateUserStories(analyzeWorkflow(sampleNotes), sampleNotes)
+  );
+  const [areUserStoriesExpanded, setAreUserStoriesExpanded] = useState(false);
   const [hasAnalyzed, setHasAnalyzed] = useState(true);
-  const [history, setHistory] = useState(() => [analyzeWorkflow(sampleNotes)]);
   const [savedAnalyses, setSavedAnalyses] = useState(loadSavedAnalyses);
   const [savedAnalysisId, setSavedAnalysisId] = useState(null);
   const [statusMessage, setStatusMessage] = useState("Demo brief generated from sample notes.");
@@ -33,57 +34,46 @@ function App() {
   }, [notes]);
 
   const analysisText = useMemo(() => formatAnalysisForExport(analysis), [analysis]);
-  const currentSnapshot = useMemo(
-    () => createAnalysisSnapshot(notes, analysis, userStories),
+  const currentAnalysisKey = useMemo(
+    () => createAnalysisKey(notes, analysis, userStories),
     [notes, analysis, userStories]
   );
-  const saveState = useMemo(
-    () => getSaveState(currentSnapshot, savedAnalysisId, savedAnalyses),
-    [currentSnapshot, savedAnalysisId, savedAnalyses]
+  const analysisSaveState = useMemo(
+    () => getAnalysisSaveState(currentAnalysisKey, savedAnalysisId, savedAnalyses),
+    [currentAnalysisKey, savedAnalysisId, savedAnalyses]
   );
-  const canGenerateUserStories = hasAnalyzed && notes.trim().length > 0;
-  const saveButtonLabel = saveState.hasUnsavedChanges ? "Update saved analysis" : "Save analysis";
 
   function handleAnalyze() {
     const nextAnalysis = analyzeWorkflow(notes);
+    const nextStories = generateUserStories(nextAnalysis, notes);
     setAnalysis(nextAnalysis);
-    setUserStories([]);
-    setActiveView("analysis");
+    setUserStories(nextStories);
+    setAreUserStoriesExpanded(false);
     setHasAnalyzed(true);
-    setHistory((items) => [nextAnalysis, ...items].slice(0, 6));
+    setSavedAnalysisId(null);
     setStatusMessage("Workflow brief refreshed with adoption guidance.");
   }
 
   function handleClear() {
     setNotes("");
-    setAnalysis(analyzeWorkflow(""));
+    const nextAnalysis = analyzeWorkflow("");
+    setAnalysis(nextAnalysis);
     setUserStories([]);
-    setActiveView("analysis");
+    setAreUserStoriesExpanded(false);
     setHasAnalyzed(false);
     setSavedAnalysisId(null);
     setStatusMessage("Ready for a new workflow discovery session.");
   }
 
-  function handleRestoreHistory() {
-    const previous = history[1] ?? history[0];
-
-    if (!previous) {
-      setStatusMessage("No previous analyses yet.");
+  function handleSaveAnalysis() {
+    if (analysisSaveState.isSaved) {
+      setSavedAnalysisId(analysisSaveState.savedAnalysis.id);
       return;
     }
 
-    setAnalysis(previous);
-    setUserStories([]);
-    setActiveView("analysis");
-    setHasAnalyzed(true);
-    setSavedAnalysisId(null);
-    setStatusMessage("Most recent historical analysis restored.");
-  }
-
-  function handleSaveAnalysis() {
-    if (saveState.hasUnsavedChanges && saveState.savedAnalysis) {
+    if (analysisSaveState.savedAnalysis) {
       const updatedAnalysis = {
-        ...saveState.savedAnalysis,
+        ...analysisSaveState.savedAnalysis,
         updatedAt: new Date().toISOString(),
         notes,
         analysis,
@@ -98,23 +88,16 @@ function App() {
       setSavedAnalysisId(updatedAnalysis.id);
       setStatusMessage(
         didPersist
-          ? "Saved analysis updated with the latest changes."
+          ? "Analysis saved."
           : "Saved analysis updated for this session. Browser storage was unavailable."
       );
       return;
     }
 
-    if (saveState.isSaved) {
-      setSavedAnalysisId(saveState.savedAnalysis.id);
-      setStatusMessage("This analysis is already saved.");
-      return;
-    }
-
-    const duplicateSavedAnalysis = savedAnalyses.find((item) => isSameSavedAnalysis(item, currentSnapshot));
+    const duplicateSavedAnalysis = savedAnalyses.find((item) => createSavedAnalysisKey(item) === currentAnalysisKey);
 
     if (duplicateSavedAnalysis) {
       setSavedAnalysisId(duplicateSavedAnalysis.id);
-      setStatusMessage("This analysis is already saved.");
       return;
     }
 
@@ -135,10 +118,9 @@ function App() {
     setNotes(savedAnalysis.notes);
     setAnalysis(savedAnalysis.analysis);
     setUserStories(savedAnalysis.userStories ?? []);
-    setActiveView(savedAnalysis.userStories?.length ? "stories" : "analysis");
+    setAreUserStoriesExpanded(false);
     setHasAnalyzed(true);
     setSavedAnalysisId(savedAnalysis.id);
-    setHistory((items) => [savedAnalysis.analysis, ...items].slice(0, 6));
     queuePageTopScroll();
     setStatusMessage(`Restored saved analysis from ${formatSavedDate(savedAnalysis.createdAt)}.`);
   }
@@ -176,25 +158,6 @@ function App() {
     setStatusMessage("Analysis exported as a text file.");
   }
 
-  function handleGenerateUserStories() {
-    if (!canGenerateUserStories) {
-      setStatusMessage("Analyze workflow notes before generating user stories.");
-      return;
-    }
-
-    const nextStories = generateUserStories(analysis, notes);
-    setUserStories(nextStories);
-    setActiveView("stories");
-    queuePageTopScroll();
-    setStatusMessage("User stories generated from the current workflow brief.");
-  }
-
-  function handleBackToAnalysis() {
-    setActiveView("analysis");
-    queuePageTopScroll();
-    setStatusMessage("Returned to workflow analysis.");
-  }
-
   async function handleCopyStory(story) {
     try {
       await navigator.clipboard.writeText(`${story.id} - ${story.title}\n${story.storyText}`);
@@ -229,14 +192,9 @@ function App() {
           </div>
         </div>
         <nav className="topbar-actions" aria-label="Analysis workspace">
-          <button className="ghost-button" type="button" onClick={handleRestoreHistory}>
-            <Icon name="clock" />
-            History
-          </button>
           <button className="ghost-button" type="button" onClick={handleSaveAnalysis}>
-            <Icon name={saveState.hasUnsavedChanges ? "refresh" : "bookmark"} />
-            {saveButtonLabel}
-            <span className="count-badge">{savedAnalyses.length}</span>
+            <Icon name={analysisSaveState.isSaved ? "bookmarkFilled" : "bookmark"} />
+            Save analysis
           </button>
           <button className="new-analysis-button" type="button" onClick={handleClear}>
             <Icon name="plus" />
@@ -252,7 +210,7 @@ function App() {
               <Icon name="note" />
             </span>
             <div>
-              <h2>1. Paste or type your business process notes</h2>
+              <h2>Paste or type your business process notes</h2>
               <p>Add the current steps, teams, tools, pain points, and target outcome.</p>
             </div>
           </div>
@@ -331,9 +289,6 @@ function App() {
             <div>
               <span className="results-kicker">Analysis results</span>
               <h2>{hasAnalyzed ? "Workflow discovery brief" : "Ready for analysis"}</h2>
-              <p className={`save-state ${saveState.status}`}>
-                {saveState.label}
-              </p>
             </div>
             <div className="result-actions" aria-label="Result actions">
               <button className="outline-button" type="button" onClick={handleCopyResult}>
@@ -351,39 +306,24 @@ function App() {
             </div>
           </div>
 
-          {activeView === "analysis" ? (
-            <>
-              <div className="results-list">
-                {sectionMeta.map((section) => (
-                  <AnalysisSection
-                    key={section.key}
-                    icon={section.icon}
-                    tone={section.tone}
-                    title={section.title}
-                    items={analysis[section.key]}
-                  />
-                ))}
-              </div>
-              <div className="results-footer">
-                <button
-                  className="outline-button generate-user-stories-button"
-                  type="button"
-                  onClick={handleGenerateUserStories}
-                  disabled={!canGenerateUserStories}
-                >
-                  <Icon name="user" />
-                  Generate User Stories
-                </button>
-              </div>
-            </>
-          ) : (
-            <UserStoriesView
-              stories={userStories}
-              onBack={handleBackToAnalysis}
-              onCopyStory={handleCopyStory}
-              onExport={handleExportUserStories}
-            />
-          )}
+          <div className="results-list">
+            {sectionMeta.map((section) => (
+              <AnalysisSection
+                key={section.key}
+                icon={section.icon}
+                tone={section.tone}
+                title={section.title}
+                items={analysis[section.key]}
+              />
+            ))}
+          </div>
+          <UserStoriesSection
+            stories={userStories}
+            isExpanded={areUserStoriesExpanded}
+            onToggle={() => setAreUserStoriesExpanded((isExpanded) => !isExpanded)}
+            onCopyStory={handleCopyStory}
+            onExport={handleExportUserStories}
+          />
         </section>
       </section>
     </main>
@@ -470,32 +410,23 @@ function createSavedAnalysis(notes, analysis, userStories) {
   };
 }
 
-function isSameSavedAnalysis(firstAnalysis, secondAnalysis) {
-  return (
-    firstAnalysis.notes === secondAnalysis.notes &&
-    JSON.stringify(firstAnalysis.analysis) === JSON.stringify(secondAnalysis.analysis) &&
-    JSON.stringify(firstAnalysis.userStories ?? []) === JSON.stringify(secondAnalysis.userStories ?? [])
-  );
+function createAnalysisKey(notes, analysis, userStories) {
+  return JSON.stringify({ notes, analysis, userStories });
 }
 
-function createAnalysisSnapshot(notes, analysis, userStories) {
-  return {
-    notes,
-    analysis,
-    userStories
-  };
+function createSavedAnalysisKey(savedAnalysis) {
+  return createAnalysisKey(savedAnalysis.notes, savedAnalysis.analysis, savedAnalysis.userStories ?? []);
 }
 
-function getSaveState(currentSnapshot, savedAnalysisId, savedAnalyses) {
+function getAnalysisSaveState(currentAnalysisKey, savedAnalysisId, savedAnalyses) {
   const savedAnalysis = savedAnalyses.find((item) => item.id === savedAnalysisId);
-  const exactSavedAnalysis = savedAnalyses.find((item) => isSameSavedAnalysis(item, currentSnapshot));
+  const exactSavedAnalysis = savedAnalyses.find((item) => createSavedAnalysisKey(item) === currentAnalysisKey);
 
-  if (savedAnalysis && !isSameSavedAnalysis(savedAnalysis, currentSnapshot)) {
+  if (savedAnalysis && createSavedAnalysisKey(savedAnalysis) !== currentAnalysisKey) {
     return {
-      status: "changed",
-      label: "Saved analysis has unsaved changes",
+      status: "unsaved",
+      label: "Unsaved",
       savedAnalysis,
-      hasUnsavedChanges: true,
       isSaved: false
     };
   }
@@ -503,18 +434,16 @@ function getSaveState(currentSnapshot, savedAnalysisId, savedAnalyses) {
   if (savedAnalysis || exactSavedAnalysis) {
     return {
       status: "saved",
-      label: "Current analysis is saved",
+      label: "Saved",
       savedAnalysis: savedAnalysis ?? exactSavedAnalysis,
-      hasUnsavedChanges: false,
       isSaved: true
     };
   }
 
   return {
     status: "unsaved",
-    label: "Current analysis is not saved",
+    label: "Unsaved",
     savedAnalysis: null,
-    hasUnsavedChanges: false,
     isSaved: false
   };
 }
@@ -585,59 +514,61 @@ function AnalysisSection({ title, items, tone, icon }) {
   );
 }
 
-function UserStoriesView({ stories, onBack, onCopyStory, onExport }) {
+function UserStoriesSection({ stories, isExpanded, onToggle, onCopyStory, onExport }) {
   return (
-    <div className="stories-view">
-      <div className="stories-toolbar">
-        <div>
-          <span className="results-kicker">Generated user stories</span>
-          <h3>Jira-ready story draft</h3>
-        </div>
-        <div className="story-actions">
-          <button className="outline-button" type="button" onClick={onBack}>
-            <Icon name="arrowLeft" />
-            Back to analysis
-          </button>
-          <button className="outline-button strong" type="button" onClick={onExport} disabled={!stories.length}>
-            <Icon name="download" />
-            Export CSV
-          </button>
-        </div>
-      </div>
+    <section className="user-stories-section" aria-label="Generated user stories">
+      <button className="story-toggle-button" type="button" onClick={onToggle}>
+        <span>{isExpanded ? "−" : "+"}</span>
+        {isExpanded ? "Hide User Stories" : "View generated User Stories"}
+      </button>
 
-      {stories.length ? (
-        <div className="story-list">
-          {stories.map((story) => (
-            <article className="story-card" key={story.id}>
-              <div className="story-card-header">
-                <div>
-                  <span className="story-id">{story.id}</span>
-                  <h4>{story.title}</h4>
-                </div>
-                <button className="outline-button" type="button" onClick={() => onCopyStory(story)}>
-                  <Icon name="copy" />
-                  Copy story
-                </button>
-              </div>
-              <p>{story.storyText}</p>
-            </article>
-          ))}
+      {isExpanded ? (
+        <div className="story-panel">
+          <div className="story-panel-header">
+            <div>
+              <span className="results-kicker">Generated user stories</span>
+              <h3>Jira-ready story draft</h3>
+            </div>
+            <button className="outline-button strong" type="button" onClick={onExport} disabled={!stories.length}>
+              <Icon name="download" />
+              Export CSV
+            </button>
+          </div>
+
+          {stories.length ? (
+            <div className="story-list">
+              {stories.map((story) => (
+                <article className="story-card" key={story.id}>
+                  <div className="story-card-header">
+                    <div>
+                      <span className="story-id">{story.id}</span>
+                      <h4>{story.title}</h4>
+                    </div>
+                    <button className="outline-button" type="button" onClick={() => onCopyStory(story)}>
+                      <Icon name="copy" />
+                      Copy story
+                    </button>
+                  </div>
+                  <p>{story.storyText}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="stories-empty">User stories will appear after workflow analysis is generated.</p>
+          )}
         </div>
-      ) : (
-        <p className="stories-empty">Generate user stories from a completed workflow analysis.</p>
-      )}
-    </div>
+      ) : null}
+    </section>
   );
 }
 
 function Icon({ name }) {
   const icons = {
     alert: <path d="M12 3 2 20h20L12 3Zm0 6v5m0 3h.01" />,
-    arrowLeft: <path d="M19 12H5m0 0 6-6m-6 6 6 6" />,
     bookmark: <path d="M6 4h12v17l-6-4-6 4V4Z" />,
+    bookmarkFilled: <path d="M6 4h12v17l-6-4-6 4V4Z" fill="currentColor" />,
     chart: <path d="M4 19V5m0 14h16M8 16v-5m4 5V8m4 8v-7" />,
     check: <path d="M20 6 9 17l-5-5" />,
-    clock: <path d="M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />,
     copy: <path d="M8 8h11v11H8zM5 16H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v1" />,
     download: <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />,
     flask: <path d="M9 3h6m-5 0v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3m-6 12h8" />,
@@ -647,7 +578,6 @@ function Icon({ name }) {
     note: <path d="M6 3h9l5 5v13H6V3Zm9 0v5h5M9 13h6M9 17h4" />,
     personCheck: <path d="M16 19c0-2.2-2.7-4-6-4s-6 1.8-6 4m6-7a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 3 2 2 4-5" />,
     plus: <path d="M12 5v14M5 12h14" />,
-    refresh: <path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v6h-6" />,
     spark: <path d="M12 2 9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5L12 2Z" />,
     trash: <path d="M4 7h16m-10 4v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3" />,
     user: <path d="M20 21c0-3.3-3.6-6-8-6s-8 2.7-8 6m8-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
