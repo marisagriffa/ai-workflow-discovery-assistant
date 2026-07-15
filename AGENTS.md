@@ -51,6 +51,18 @@ For UI changes, verify:
 If tests are added, place them near the feature or in `tests/` and document the command here.
 
 ## Commit & Pull Request Guidelines
+### Branch workflow
+
+After Marisa confirms that a pull request has been merged:
+
+1. Switch to `dev`.
+2. Fetch and pull the latest changes from `origin/dev`.
+3. Verify that the working tree is clean.
+4. Create a new branch from the updated `dev` branch for every new task.
+5. Never start new work directly on `dev`.
+6. Never create a new branch from an outdated feature branch.
+7. Do not reuse a completed feature branch for unrelated work.
+
 Before every commit, review whether PROJECT_REQUIREMENTS.md became outdated.
 
 Update it in the same branch when the change affects product behavior, requirements, scope, limitations, architecture, AI behavior, roadmap status, decisions, or open questions.

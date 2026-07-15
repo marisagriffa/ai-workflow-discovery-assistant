@@ -1,154 +1,173 @@
 # AI Workflow Discovery Assistant
 
-AI Workflow Discovery Assistant is a React + Vite portfolio project for AI Operations, Product, Business Analysis, and Process Improvement roles. It helps teams turn messy business process notes into a structured workflow discovery brief with bottlenecks, requirements, automation opportunities, human review points, implementation impact, and generated user stories.
+AI Workflow Discovery Assistant turns informal business process notes into a structured workflow discovery brief, helping teams identify bottlenecks, requirements, AI automation opportunities, human review points, implementation impact, and Jira-friendly User Stories.
 
-The current implementation is a local deterministic prototype. It does not call an LLM, backend, or external service. This keeps the project explainable and safe while demonstrating the product workflow and analysis logic.
+This project demonstrates workflow discovery, requirements analysis, AI adoption planning, and responsible human-in-the-loop design.
 
-## Product Value
+## Business Problem
 
-Business workflows are often documented in scattered notes, emails, spreadsheets, chat threads, and informal team knowledge. Before a team can improve or automate a process, it needs a clear view of:
+Operational processes are often described across emails, spreadsheets, tickets, chat threads, and informal stakeholder notes. Before a team can improve or automate a workflow, it needs a clear view of:
 
-- how the current workflow moves from intake to completion;
-- where manual handoffs, missing information, and status gaps slow the process down;
+- how the process works today;
+- where handoffs, missing information, and delays appear;
 - what requirements an improved workflow must satisfy;
-- where AI can safely assist;
-- where human review remains required;
-- how implementation impact should be measured.
+- where AI or automation could help;
+- where human judgment and review must remain in control.
 
-This tool gives teams a structured starting point for workflow discovery and AI adoption planning.
+This project addresses the early discovery gap between messy process notes and structured, actionable product and operations outputs.
 
 ## Target Users
 
-- Operations teams mapping internal workflows and handoffs.
-- Product teams defining AI-assisted workflow requirements.
-- Business Analysts and Functional Analysts preparing structured discovery artifacts.
-- Process Improvement Analysts identifying bottlenecks and automation candidates.
-- Support teams improving triage, escalation, and response workflows.
-- AI Operators or automation consultants preparing stakeholder-ready workflow briefs.
+- Operations and AI Operations teams reviewing manual workflows.
+- Product Owners shaping workflow automation opportunities.
+- Business Analysts and Functional Analysts preparing discovery outputs.
+- Process Improvement Analysts identifying bottlenecks and implementation impact.
+- Support, service, or back-office teams documenting repeatable workflows.
 
-## Current Workflow
+## Product Workflow
 
-1. The user enters or edits business process notes.
-2. The user clicks `Analyze Workflow` or `Regenerate`.
-3. The app generates a structured workflow brief using local deterministic logic.
-4. The app automatically generates User Stories from the same analysis.
-5. The user can copy or export the primary analysis as a text file.
-6. The user can expand `+ View generated User Stories` after Implementation Impact.
-7. The user can copy individual User Stories or export all stories as a Jira-friendly CSV.
-8. The user can save the analysis, including its generated User Stories, in browser local storage.
-9. Saved analyses can be restored or deleted from the Saved analyses panel.
+1. Paste or type business process notes.
+2. Generate a structured workflow analysis.
+3. Review the current workflow, bottlenecks, requirements, AI opportunities, human review points, and implementation impact.
+4. Expand the generated User Stories section when needed.
+5. Copy individual outputs or export analysis and User Stories.
+6. Save the analysis locally and restore it from Saved analyses.
 
-## Implemented Output
+## Current Implemented Capabilities
 
-The primary workflow brief includes six sections:
+- Deterministic local workflow analysis from free-form business notes.
+- English interface with generated content in English or Spanish, based on the input notes.
+- Six analysis sections:
+  - Current workflow
+  - Bottlenecks
+  - Requirements
+  - AI automation opportunities
+  - Human review points
+  - Implementation Impact
+- Automatically generated User Stories linked to the analysis.
+- Inline collapsible User Stories section after Implementation Impact.
+- Individual User Story copy action.
+- Jira-friendly CSV export for all generated User Stories.
+- Plain text export for the workflow analysis.
+- Local saved analyses with duplicate-save prevention.
+- Bookmark-based saved-state indicator.
 
-- Current workflow
-- Bottlenecks
-- Requirements
-- AI automation opportunities
-- Human review points
-- Implementation Impact
+## Skills Demonstrated
 
-Generated User Stories are implemented as a secondary artifact. They appear in an inline collapsible section after Implementation Impact and include:
+- Workflow discovery and process mapping.
+- Requirements analysis and functional decomposition.
+- AI adoption opportunity assessment.
+- Human-in-the-loop operating model design.
+- User Story generation for delivery planning.
+- Product scope control and MVP trade-off decisions.
+- Professional documentation and stakeholder communication.
+- Lightweight frontend implementation to validate a product workflow.
 
-- Story ID, such as `US-001`
-- Short title
-- Complete story text
-- Copy action for each story
-- CSV export for all generated stories
 
-The CSV includes:
+## Example Input
 
-- `Issue Type`
-- `Summary`
-- `Description`
-- `Story ID`
+```text
+The support team receives customer requests by email and copies details into a spreadsheet.
+Some requests are missing account information, so agents reply manually to ask for clarification.
+Managers review urgent cases in a daily meeting, but status updates are not always reflected in the tracker.
+The team wants faster triage, fewer missed handoffs, and clearer ownership before escalation.
+```
 
-Every exported row uses `Story` as the Issue Type.
+## Example Output
 
-## Deferred Outputs
+The tool produces a structured discovery brief such as:
 
-Acceptance criteria and test scenarios are intentionally deferred. They are not part of the current primary analysis, saved-analysis validation, copy output, or export output.
+- Current workflow: request intake, manual data capture, clarification, manager review, escalation.
+- Bottlenecks: missing information, spreadsheet duplication, delayed status updates, unclear ownership.
+- Requirements: capture required fields, assign owners, flag urgent cases, maintain a shared status view.
+- AI automation opportunities: classify request type, identify missing fields, draft clarification messages, summarize urgent cases.
+- Human review points: escalation decisions, sensitive customer communications, exceptions, and policy-sensitive cases.
+- Implementation Impact: reduced triage time, clearer handoffs, better visibility, and more consistent escalation handling.
 
-## Language Behavior
+Generated User Stories use the format:
 
-The application interface is in English.
+```text
+US-001 - Capture required request information
+As a support agent, I want required customer details to be identified during intake, so that incomplete requests can be resolved before escalation.
+```
 
-Generated content follows the detected language of the business process notes:
-
-- English notes generate English analysis and English User Stories.
-- Spanish notes generate Spanish analysis and Spanish User Stories.
-
-Language detection is deterministic and currently limited to English and Spanish heuristics.
-
-## Saved Analysis Behavior
-
-Saved analyses are stored in browser local storage. A saved analysis includes:
-
-- notes;
-- generated analysis output;
-- generated User Stories.
-
-Duplicate saves are silently prevented when notes, analysis output, and User Stories have not changed. The `Save analysis` bookmark icon is the saved-state indicator:
-
-- outlined bookmark: current analysis is not saved;
-- filled bookmark: current analysis is already saved.
-
-Saved analyses are local to the browser and do not sync across users or devices.
+Spanish notes generate Spanish analysis and Spanish User Stories.
 
 ## Responsible AI And Human Review
 
-The product separates automation opportunities from human review points. This is central to the intended AI adoption workflow.
+The project separates AI assistance from accountable human decisions. It treats AI as a support layer for structuring information, identifying gaps, drafting summaries, and suggesting workflow improvements.
 
-AI may assist with:
+Human review remains necessary for:
 
-- extracting structured fields from notes, forms, emails, and documents;
-- classifying requests by type, urgency, owner, and missing information;
-- drafting summaries, replies, approval notes, recommendations, and user stories;
-- validating requests against rules, policies, and historical patterns;
-- syncing status updates across collaboration and system-of-record tools.
+- high-risk or policy-sensitive decisions;
+- incomplete, contradictory, or ambiguous information;
+- customer-facing communication requiring judgment or empathy;
+- exceptions, overrides, approvals, and irreversible system updates.
 
-Human review remains required for:
+The current analyzer is deterministic local logic used to validate the workflow and product experience. It does not call a real AI API, backend service, or external model.
 
-- high-value, high-risk, or policy-sensitive requests;
-- missing, contradictory, or low-confidence information;
-- communications that require judgment or empathy;
-- exceptions, overrides, and irreversible system updates.
+## Architecture And Technology
 
-The assistant supports human decision-making. It does not replace accountable process owners, reviewers, or operators.
+The project is intentionally lightweight so the workflow can be evaluated without credentials or infrastructure.
 
-## Screenshots
+- React for the user interface.
+- Vite for local development and production builds.
+- JavaScript for deterministic analysis logic.
+- CSS for responsive interface styling.
+- Browser local storage for saved analyses.
+- Browser Clipboard and download APIs for copy and export actions.
 
-Current portfolio screenshots are stored in `docs/screenshots/`.
-
-Recommended README order:
-
-1. `docs/screenshots/Overview.png`
-2. `docs/screenshots/UserStories.png`
-
-## Technical Overview
-
-### Technologies Used
-
-- React
-- Vite
-- JavaScript
-- CSS
-- Browser local storage
-- Browser Clipboard API
-- Browser Blob and download APIs
-
-### Architecture
+Core files:
 
 ```text
 src/
-  App.jsx              UI, local state, save/restore behavior, copy/export behavior, and result rendering
+  App.jsx              UI, state, save/restore behavior, copy/export behavior, rendering
   workflowAnalyzer.js  Local deterministic analysis and User Story generation logic
-  styles.css           Responsive SaaS-style styling
+  styles.css           Responsive interface styling
   main.jsx             React entry point
 ```
 
-The analyzer can later be replaced with an LLM or workflow-analysis API without redesigning the interface.
+## Intentional MVP Limitations
+
+- No real AI API integration.
+- No backend database.
+- No authentication, user accounts, or team workspace.
+- No external system integrations.
+- No acceptance criteria generation yet.
+- No test scenario generation yet.
+- Saved analyses are browser-local only.
+- Analysis export is plain text.
+- User Stories export is CSV.
+
+These limitations are intentional for the MVP: the goal is to validate the product workflow, analysis structure, and human-review model before adding external services.
+
+## Roadmap
+
+### Implemented
+
+- Workflow analysis from business notes.
+- AI opportunity and human review sections.
+- Automatic User Story generation.
+- Jira-friendly User Story CSV export.
+- Local saved analyses.
+- English and Spanish generated content behavior.
+- Deployment-ready Vite build.
+
+### Next
+
+- Editable analysis sections before export.
+- More robust language and process-pattern detection.
+- Improved templates for operations, support, HR, finance, and compliance workflows.
+- Stronger demo examples and screenshots.
+
+### Later
+
+- Real LLM-backed analysis with traceability and confidence indicators.
+- Backend persistence and team workspaces.
+- Authentication and role-based access.
+- Integrations with tools such as Jira, Slack, Gmail, Google Drive, Notion, ServiceNow, Salesforce, or NetSuite.
+- Additional export formats such as Markdown, DOCX, or PDF.
+- Acceptance criteria and test scenario generation after the core workflow is validated.
 
 ## How To Run Locally
 
@@ -176,43 +195,17 @@ Preview the production build:
 npm run preview
 ```
 
-## Deployment Readiness
-
-The app is ready for Vercel as a Vite project:
+Vercel configuration:
 
 - Build command: `npm run build`
 - Output directory: `dist`
-- No environment variables required
-- No backend or external service credentials required
+- Environment variables: none required
 
-## Current Limitations
+## Live Demo And Screenshots
 
-- No real LLM/API integration.
-- No backend database.
-- No authentication or team workspace.
-- No formal automated test suite.
-- Saved analyses are browser-local only.
-- Primary analysis export is plain text only.
-- User Stories export is CSV only.
-- Acceptance criteria and test scenarios are deferred.
+Live demo: https://ai-workflow-discovery-assistant.vercel.app/
 
-## Future Improvements
+Screenshots:
 
-- Add real LLM-backed workflow analysis with confidence scoring and source traceability.
-- Add editable output sections so users can refine generated briefs before exporting.
-- Add Markdown, PDF, or DOCX export.
-- Add persistent history or team workspace storage.
-- Add configurable workflow templates for operations, product, support, HR, finance, and compliance.
-- Add integrations with tools such as Slack, Jira, Notion, Gmail, Google Drive, ServiceNow, Salesforce, and NetSuite.
-- Add dashboards for cycle time, automation rate, exception rate, and human-review load.
-
-## Portfolio Skills Demonstrated
-
-- Workflow discovery
-- Process improvement analysis
-- Requirements definition
-- User Story generation
-- AI automation opportunity mapping
-- Human-in-the-loop design
-- Product scope and trade-off documentation
-- Lightweight technical implementation with deployment-ready React/Vite
+- `docs/screenshots/Overview.png`
+- `docs/screenshots/UserStories.png`
