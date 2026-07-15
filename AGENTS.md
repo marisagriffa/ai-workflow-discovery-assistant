@@ -45,11 +45,24 @@ For UI changes, verify:
 1. Enter or edit business notes.
 2. Click `Analyze Workflow`.
 3. Confirm all analysis sections render.
-4. Check copy, export, history, saved analyses, and new analysis actions if changed.
+4. Confirm generated User Stories are available in the inline collapsible section.
+5. Check copy, export, User Stories CSV export, saved analyses, and new analysis actions if changed.
 
 If tests are added, place them near the feature or in `tests/` and document the command here.
 
 ## Commit & Pull Request Guidelines
+### Branch workflow
+
+After Marisa confirms that a pull request has been merged:
+
+1. Switch to `dev`.
+2. Fetch and pull the latest changes from `origin/dev`.
+3. Verify that the working tree is clean.
+4. Create a new branch from the updated `dev` branch for every new task.
+5. Never start new work directly on `dev`.
+6. Never create a new branch from an outdated feature branch.
+7. Do not reuse a completed feature branch for unrelated work.
+
 Before every commit, review whether PROJECT_REQUIREMENTS.md became outdated.
 
 Update it in the same branch when the change affects product behavior, requirements, scope, limitations, architecture, AI behavior, roadmap status, decisions, or open questions.
