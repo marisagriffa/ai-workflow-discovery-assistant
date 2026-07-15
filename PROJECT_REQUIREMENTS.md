@@ -80,6 +80,20 @@ It must never describe planned or mocked behavior as fully implemented.
 - Primary analysis export format is plain text only.
 - Generated user stories export as a single CSV only.
 
+### Removed Or Superseded
+
+- The History action was removed from the current interface.
+- The separate Generate User Stories button was superseded by automatic User Story generation whenever analysis is generated or regenerated.
+- The separate User Stories view was superseded by an inline collapsible User Stories section after Implementation Impact.
+- Separate User Story saved-state management was superseded by saving User Stories as part of the saved analysis record.
+
+### Deferred
+
+- Acceptance criteria generation is deferred.
+- Test scenario generation is deferred.
+- Real LLM/API integration is deferred.
+- Backend persistence, authentication, team workspaces, and third-party integrations are deferred.
+
 ### Mocked Or Not Functional
 
 - "AI analysis" is mocked by local rule-based logic in `src/workflowAnalyzer.js`.
@@ -189,7 +203,7 @@ It must never describe planned or mocked behavior as fully implemented.
 
 - **Description:** The app shall export all generated user stories as one Jira-friendly CSV file.
 - **Priority:** Medium
-- **Acceptance criteria:** CSV export is available from the dedicated user stories view; the CSV includes `Issue Type`, `Summary`, `Description`, and `Story ID`; every row uses `Story` as the Issue Type; individual per-story CSV export is not provided.
+- **Acceptance criteria:** CSV export is available from the expanded inline User Stories section; the CSV includes `Issue Type`, `Summary`, `Description`, and `Story ID`; every row uses `Story` as the Issue Type; individual per-story CSV export is not provided.
 
 ## 4. Non-Functional Requirements
 
@@ -254,6 +268,9 @@ It must never describe planned or mocked behavior as fully implemented.
 - **AI workflow transformation positioning:** The product is positioned as a practical AI workflow transformation tool because the goal is adoption-ready process improvement, not only text summarization.
 - **Explicit human review points:** Human review points are required to make AI adoption safer, auditable, and accountable.
 - **Required product actions:** Saved analyses, New analysis, Copy, Export, Regenerate, and collapsible generated User Stories are required because they make the app feel like a usable internal workflow tool and support stakeholder documentation.
+- **Automatic User Story generation:** User Stories are generated with the workflow analysis so users do not need a separate generation step.
+- **Inline secondary artifact:** User Stories are shown in a collapsible section instead of replacing the main analysis, keeping the workflow brief visible while still supporting Jira-ready story export.
+- **Deferred acceptance criteria and test scenarios:** These outputs are intentionally deferred to keep the current product focused on discovery, requirements, automation candidates, human review, implementation impact, and User Stories.
 - **Professional SaaS look:** The UI must resemble a real internal SaaS product suitable for AI Operator work, not a minimal demo or landing page.
 - **Rejected/deferred ideas:** Marketing-style landing page, purely decorative controls, real LLM integration without credential planning, backend storage, team collaboration, and third-party workflow integrations were deferred.
 
@@ -277,7 +294,7 @@ It must never describe planned or mocked behavior as fully implemented.
 
 ### In Progress
 
-- Repository context handoff for future Codex CLI sessions.
+- Portfolio documentation and screenshot presentation.
 
 ### Planned
 

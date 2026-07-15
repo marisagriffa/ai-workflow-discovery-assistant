@@ -45,7 +45,8 @@ For UI changes, verify:
 1. Enter or edit business notes.
 2. Click `Analyze Workflow`.
 3. Confirm all analysis sections render.
-4. Check copy, export, history, saved analyses, and new analysis actions if changed.
+4. Confirm generated User Stories are available in the inline collapsible section.
+5. Check copy, export, User Stories CSV export, saved analyses, and new analysis actions if changed.
 
 If tests are added, place them near the feature or in `tests/` and document the command here.
 

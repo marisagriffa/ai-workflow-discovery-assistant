@@ -1,134 +1,130 @@
 # AI Workflow Discovery Assistant
 
-AI Workflow Discovery Assistant is a React + Vite portfolio project built for an AI Operator role interview. It helps operations, product, and support teams convert messy business process notes into a structured AI workflow discovery brief.
+AI Workflow Discovery Assistant is a React + Vite portfolio project for AI Operations, Product, Business Analysis, and Process Improvement roles. It helps teams turn messy business process notes into a structured workflow discovery brief with bottlenecks, requirements, automation opportunities, human review points, implementation impact, and generated user stories.
 
-The app demonstrates how an AI Operator can move a team from "we should automate this" to a practical implementation plan: current-state workflow, bottlenecks, requirements, user stories, acceptance criteria, AI automation opportunities, human review points, test scenarios, and implementation impact.
+The current implementation is a local deterministic prototype. It does not call an LLM, backend, or external service. This keeps the project explainable and safe while demonstrating the product workflow and analysis logic.
 
-## Project Overview
+## Product Value
 
-### What Problem This Tool Solves
+Business workflows are often documented in scattered notes, emails, spreadsheets, chat threads, and informal team knowledge. Before a team can improve or automate a process, it needs a clear view of:
 
-Business workflows are often described in scattered notes, email threads, meeting summaries, spreadsheets, and informal team knowledge. Before a team can automate a process with AI, it needs to understand:
-
-- What the current workflow actually is.
-- Where delays and manual handoffs happen.
-- Which steps are good candidates for AI assistance.
-- Which steps require human review or final decision-making.
-- How the team will measure whether AI adoption is working.
+- how the current workflow moves from intake to completion;
+- where manual handoffs, missing information, and status gaps slow the process down;
+- what requirements an improved workflow must satisfy;
+- where AI can safely assist;
+- where human review remains required;
+- how implementation impact should be measured.
 
 This tool gives teams a structured starting point for workflow discovery and AI adoption planning.
 
-### Who Would Use It
-
-The application is designed for teams that need to document, evaluate, and improve repeatable business processes:
+## Target Users
 
 - Operations teams mapping internal workflows and handoffs.
-- Product teams defining AI-assisted features or workflow requirements.
-- Support teams improving ticket triage, escalation, and response workflows.
-- AI Operators or automation consultants preparing discovery notes for stakeholders.
-- Managers evaluating where AI can reduce manual effort without removing necessary human oversight.
+- Product teams defining AI-assisted workflow requirements.
+- Business Analysts and Functional Analysts preparing structured discovery artifacts.
+- Process Improvement Analysts identifying bottlenecks and automation candidates.
+- Support teams improving triage, escalation, and response workflows.
+- AI Operators or automation consultants preparing stakeholder-ready workflow briefs.
 
-### Why AI Improves This Workflow
+## Current Workflow
 
-AI improves workflow discovery because it can rapidly transform unstructured notes into consistent documentation. Instead of manually rewriting messy process notes into requirements, test cases, and adoption plans, an AI-assisted workflow can draft the first version and let humans focus on validation, prioritization, risk, and change management.
+1. The user enters or edits business process notes.
+2. The user clicks `Analyze Workflow` or `Regenerate`.
+3. The app generates a structured workflow brief using local deterministic logic.
+4. The app automatically generates User Stories from the same analysis.
+5. The user can copy or export the primary analysis as a text file.
+6. The user can expand `+ View generated User Stories` after Implementation Impact.
+7. The user can copy individual User Stories or export all stories as a Jira-friendly CSV.
+8. The user can save the analysis, including its generated User Stories, in browser local storage.
+9. Saved analyses can be restored or deleted from the Saved analyses panel.
 
-### Analyzing Existing Workflows
+## Implemented Output
 
-The user enters raw notes describing steps, tools, owners, pain points, compliance needs, and goals. The app structures those notes into a current workflow summary so the team can see how work moves from intake to completion.
+The primary workflow brief includes six sections:
 
-In this demo, the analysis is generated with explainable local logic. In a production implementation, this layer could be powered by a large language model that extracts process steps, actors, tools, inputs, outputs, and decision points.
+- Current workflow
+- Bottlenecks
+- Requirements
+- AI automation opportunities
+- Human review points
+- Implementation Impact
 
-### Detecting Bottlenecks
+Generated User Stories are implemented as a secondary artifact. They appear in an inline collapsible section after Implementation Impact and include:
 
-The tool identifies likely sources of delay and operational friction, such as:
+- Story ID, such as `US-001`
+- Short title
+- Complete story text
+- Copy action for each story
+- CSV export for all generated stories
 
-- Manual handoffs.
-- Missing information or attachments.
-- Repeated status checks.
-- Duplicate data entry.
-- Policy or approval delays.
-- Unclear exception handling.
+The CSV includes:
 
-This helps teams move from a vague feeling that a process is inefficient to a more concrete improvement backlog.
+- `Issue Type`
+- `Summary`
+- `Description`
+- `Story ID`
 
-### Proposing AI Automation Opportunities
+Every exported row uses `Story` as the Issue Type.
 
-The assistant proposes areas where AI could reduce manual effort, including:
+## Deferred Outputs
 
-- Extracting structured data from notes, forms, emails, and documents.
-- Classifying requests by type, priority, owner, or risk.
-- Drafting summaries, replies, approval notes, and next-step recommendations.
-- Validating requests against rules, policies, and historical patterns.
-- Syncing status updates across collaboration and system-of-record tools.
+Acceptance criteria and test scenarios are intentionally deferred. They are not part of the current primary analysis, saved-analysis validation, copy output, or export output.
 
-The goal is not to automate everything. The goal is to identify where AI can safely accelerate repetitive analysis, drafting, classification, and routing work.
+## Language Behavior
 
-### Defining Human Review Points
+The application interface is in English.
 
-The tool explicitly separates automation opportunities from human review points. This is important because practical AI adoption depends on knowing where AI should assist and where a person must remain accountable.
+Generated content follows the detected language of the business process notes:
 
-Human review points are highlighted for high-value, high-risk, ambiguous, policy-sensitive, or irreversible decisions.
+- English notes generate English analysis and English User Stories.
+- Spanish notes generate Spanish analysis and Spanish User Stories.
 
-## Human-In-The-Loop Design
+Language detection is deterministic and currently limited to English and Spanish heuristics.
 
-This project uses a human-in-the-loop design mindset. AI can assist with analysis and drafting, but humans remain responsible for judgment, accountability, and final approval.
+## Saved Analysis Behavior
 
-### What AI Can Execute Autonomously
+Saved analyses are stored in browser local storage. A saved analysis includes:
 
-In a production workflow, AI could autonomously handle bounded tasks such as:
+- notes;
+- generated analysis output;
+- generated User Stories.
 
-- Parsing unstructured workflow notes.
-- Extracting tools, actors, steps, pain points, and goals.
-- Drafting requirements and user stories.
-- Suggesting acceptance criteria and test scenarios.
-- Identifying likely bottlenecks.
-- Recommending automation candidates.
-- Producing a first-pass implementation impact summary.
+Duplicate saves are silently prevented when notes, analysis output, and User Stories have not changed. The `Save analysis` bookmark icon is the saved-state indicator:
 
-These tasks are useful because they are repeatable, reviewable, and easy to revise.
+- outlined bookmark: current analysis is not saved;
+- filled bookmark: current analysis is already saved.
 
-### What Requires Human Review
+Saved analyses are local to the browser and do not sync across users or devices.
 
-Human review should be required when the workflow involves:
+## Responsible AI And Human Review
 
-- Exceptions or edge cases.
-- Low-confidence AI recommendations.
-- Policy, compliance, privacy, legal, or financial risk.
-- Customer or employee communications that require empathy.
-- Major process changes that affect team responsibilities.
-- Any output that will be used for stakeholder approval or implementation planning.
+The product separates automation opportunities from human review points. This is central to the intended AI adoption workflow.
 
-### What Must Remain A Human Decision
+AI may assist with:
 
-Some decisions should remain human-owned even in an AI-powered workflow:
+- extracting structured fields from notes, forms, emails, and documents;
+- classifying requests by type, urgency, owner, and missing information;
+- drafting summaries, replies, approval notes, recommendations, and user stories;
+- validating requests against rules, policies, and historical patterns;
+- syncing status updates across collaboration and system-of-record tools.
 
-- Whether to approve policy exceptions.
-- Whether to change a system of record.
-- Whether a recommendation is appropriate for the business context.
-- Whether success metrics are realistic and aligned with stakeholder goals.
-- Whether the team is ready to adopt the proposed automation.
+Human review remains required for:
 
-The assistant supports these decisions by preparing structured information, but it does not replace accountable decision-makers.
+- high-value, high-risk, or policy-sensitive requests;
+- missing, contradictory, or low-confidence information;
+- communications that require judgment or empathy;
+- exceptions, overrides, and irreversible system updates.
 
-## Impact
+The assistant supports human decision-making. It does not replace accountable process owners, reviewers, or operators.
 
-The expected impact of this tool is stronger workflow discovery and faster AI adoption planning.
+## Screenshots
 
-### Reduced Manual Analysis Time
+Current portfolio screenshots are stored in `docs/screenshots/`.
 
-Teams can move from raw notes to a structured analysis faster, reducing time spent manually rewriting process documentation.
+Recommended README order:
 
-### Faster Process Documentation
-
-The app generates reusable sections that can become the foundation for discovery docs, project briefs, stakeholder updates, or automation requirements.
-
-### More Consistent Workflow Evaluation
-
-Every analysis follows the same structure, which helps teams compare workflows consistently across departments or use cases.
-
-### Better Adoption Of AI Practices
-
-The Implementation Impact section connects workflow analysis to adoption planning by outlining estimated time saved, manual steps reduced, recommended rollout approach, and success metrics.
+1. `docs/screenshots/Overview.png`
+2. `docs/screenshots/UserStories.png`
 
 ## Technical Overview
 
@@ -138,25 +134,23 @@ The Implementation Impact section connects workflow analysis to adoption plannin
 - Vite
 - JavaScript
 - CSS
-- Browser Clipboard API for copying results
-- Browser Blob and download APIs for exporting analysis files
-- Git and GitHub for source control and publishing
+- Browser local storage
+- Browser Clipboard API
+- Browser Blob and download APIs
 
-### Architecture Overview
-
-The architecture is intentionally simple and explainable:
+### Architecture
 
 ```text
 src/
-  App.jsx              UI composition, user actions, save/history state, copy/export actions
-  workflowAnalyzer.js  Local workflow analysis rules and sample notes
-  styles.css           SaaS-style layout, responsive design, and component styling
+  App.jsx              UI, local state, save/restore behavior, copy/export behavior, and result rendering
+  workflowAnalyzer.js  Local deterministic analysis and User Story generation logic
+  styles.css           Responsive SaaS-style styling
   main.jsx             React entry point
 ```
 
-The local analyzer can later be replaced with an API call to an LLM or workflow-analysis service without redesigning the user interface.
+The analyzer can later be replaced with an LLM or workflow-analysis API without redesigning the interface.
 
-### How To Run Locally
+## How To Run Locally
 
 Install dependencies:
 
@@ -182,35 +176,43 @@ Preview the production build:
 npm run preview
 ```
 
+## Deployment Readiness
+
+The app is ready for Vercel as a Vite project:
+
+- Build command: `npm run build`
+- Output directory: `dist`
+- No environment variables required
+- No backend or external service credentials required
+
+## Current Limitations
+
+- No real LLM/API integration.
+- No backend database.
+- No authentication or team workspace.
+- No formal automated test suite.
+- Saved analyses are browser-local only.
+- Primary analysis export is plain text only.
+- User Stories export is CSV only.
+- Acceptance criteria and test scenarios are deferred.
+
 ## Future Improvements
 
-- Add real integrations with Slack, Jira, Notion, Gmail, Google Drive, ServiceNow, Salesforce, and other workflow tools.
-- Save analysis history with local storage or a backend database.
-- Export reports as Markdown, PDF, or project-management tickets.
-- Add team collaboration features for reviewers, operators, and stakeholders.
-- Add configurable templates for operations, product, support, HR, finance, and compliance workflows.
-- Add LLM-backed workflow analysis with confidence scoring and source traceability.
-- Add editable output sections so users can refine the generated brief before exporting.
+- Add real LLM-backed workflow analysis with confidence scoring and source traceability.
+- Add editable output sections so users can refine generated briefs before exporting.
+- Add Markdown, PDF, or DOCX export.
+- Add persistent history or team workspace storage.
+- Add configurable workflow templates for operations, product, support, HR, finance, and compliance.
+- Add integrations with tools such as Slack, Jira, Notion, Gmail, Google Drive, ServiceNow, Salesforce, and NetSuite.
 - Add dashboards for cycle time, automation rate, exception rate, and human-review load.
 
-## Repository Readiness
+## Portfolio Skills Demonstrated
 
-This repository is prepared for public GitHub publication:
-
-- No API keys or secrets are required to run the app.
-- The app currently uses local demo logic rather than a live model provider.
-- `node_modules/`, production builds, logs, environment files, and test artifacts are ignored.
-- The project can be installed, run, and built with standard npm commands.
-
-## AI Operator Approach
-
-This project applies AI Operator principles to transform unstructured business information into actionable workflow improvements.
-
-It focuses on:
-
-- Process discovery and analysis
-- Bottleneck detection
-- Automation opportunity mapping
-- Human-in-the-loop decision design
-- Adoption planning
-- Clear documentation for stakeholders
+- Workflow discovery
+- Process improvement analysis
+- Requirements definition
+- User Story generation
+- AI automation opportunity mapping
+- Human-in-the-loop design
+- Product scope and trade-off documentation
+- Lightweight technical implementation with deployment-ready React/Vite
